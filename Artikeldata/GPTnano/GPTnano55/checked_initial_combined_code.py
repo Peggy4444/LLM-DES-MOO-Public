@@ -1,0 +1,622 @@
+import simpy
+import random
+import statistics
+import csv
+import os
+import multiprocessing
+import numpy as np
+
+from pymoo.core.problem import Problem
+from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.operators.crossover.sbx import SBX
+from pymoo.operators.mutation.pm import PM
+from pymoo.operators.sampling.rnd import IntegerRandomSampling
+from pymoo.termination import get_termination
+from pymoo.optimize import minimize
+
+# Simulation constants (align with existing simulation model)
+RANDOM_SEED = 55
+SIM_TIME = 691200          # 8 days in seconds
+WARMUP_SECONDS = 86400     # 1 day
+MEASURE_UNTIL = SIM_TIME
+
+def production_wait_time(now: float) -> float:
+    """
+    Compute how long (in seconds) the machine must wait until production is allowed.
+    Stop windows: Friday 17:00 -> Saturday 07:00 & Saturday 17:00 -> Sunday 07:00
+    """
+    SEC_PER_DAY = 86400
+    day = int((now // SEC_PER_DAY) % 7)  # 0=Mon ... 6=Sun
+    time_of_day = now % SEC_PER_DAY
+    t_07 = 7 * 3600
+    t_17 = 17 * 3600
+
+    if day == 4:  # Friday
+        if time_of_day >= t_17:
+            return (SEC_PER_DAY - time_of_day) + t_07
+    elif day == 5:  # Saturday
+        if time_of_day < t_07:
+            return t_07 - time_of_day
+        if time_of_day >= t_17:
+            return (SEC_PER_DAY - time_of_day) + t_07
+    elif day == 6:  # Sunday
+        if time_of_day < t_07:
+            return t_07 - time_of_day
+
+    return 0.0
+
+def _has_free_capacity(buf):
+    return (getattr(buf, "free_capacity", None) and buf.free_capacity() > 0) \
+           or len(buf.items) < buf.capacity
+
+def splitter(env, input_store, out1, out2):
+    toggle = 0
+    while True:
+        part = yield input_store.get()
+        first, second = (out1, out2) if toggle == 0 else (out2, out1)
+        if _has_free_capacity(first):
+            yield first.put(part)
+            toggle ^= 1
+        else:
+            yield second.put(part)
+
+def forwarder(env, src, dst):
+    while True:
+        part = yield src.get()
+        yield dst.put(part)
+
+def merger(env, a, b, out):
+    env.process(forwarder(env, a, out))
+    env.process(forwarder(env, b, out))
+
+def reset_machine_stats(m):
+    m.working_time = 0
+    m.failed_time_total = 0
+    m.wait_input_time = 0
+    m.blocked_time = 0
+    m.active_count = 0
+    m.processed_count = 0
+    m.window_wait_time = 0
+    m.last_reset = m.env.now
+    m.is_up = True
+
+class DelayBuffer:
+    """Single store with a global capacity cap that includes in-transit + ready."""
+    def __init__(self, env, cap, delay):
+        self.env = env
+        self.delay = delay
+        self.cap = cap
+        self.store = simpy.Store(env, capacity=cap)
+        self.tokens = simpy.Container(env, init=cap, capacity=cap)
+        self._in_transit = 0
+
+    def put(self, part):
+        return self.env.process(self._delayed_put(part))
+
+    def get(self):
+        return self.env.process(self._get_and_release())
+
+    @property
+    def items(self):
+        return self.store.items
+
+    @property
+    def capacity(self):
+        return self.store.capacity
+
+    def in_transit_count(self):
+        return self._in_transit
+
+    def free_capacity(self):
+        return int(self.tokens.level)
+
+    def _delayed_put(self, part):
+        yield self.tokens.get(1)
+        self._in_transit += 1
+        try:
+            yield self.env.timeout(self.delay)
+            yield self.store.put(part)
+        finally:
+            self._in_transit -= 1
+
+    def _get_and_release(self):
+        part = yield self.store.get()
+        yield self.tokens.put(1)
+        return part
+
+class Machine:
+    """Event-driven machine with 100% accurate queue physics and zero busy-waiting."""
+    def __init__(self, env, name, input_buffer, output_buffer, process_time,
+                 availability, mttr, working_power, waiting_power,
+                 defect_rate=None, defect_sink=None, capacity=1):
+
+        self.env = env
+        self.name = name
+        self.input_buffer = input_buffer
+        self.output_buffer = output_buffer
+        self.process_time = process_time
+        self.availability = availability
+        self.mttr = mttr
+        self.defect_rate = defect_rate
+        self.defect_sink = defect_sink
+        self.working_power = working_power
+        self.waiting_power = waiting_power
+        self.capacity = capacity
+
+        self.resource = simpy.Resource(env, capacity=capacity)
+        self.worker_processes = []
+
+        self.working_time = 0
+        self.failed_time_total = 0
+        self.wait_input_time = 0
+        self.blocked_time = 0
+        self.active_count = 0
+        self.processed_count = 0
+        self.window_wait_time = 0
+        self.last_reset = 0.0
+        self.is_up = True
+        
+        # Event trigger for waking up sleeping workers without polling
+        self.repair_event = env.event()
+
+        if availability < 100:
+            avail_frac = availability / 100.0
+            self.mtbf = mttr * (avail_frac / (1 - avail_frac))
+            env.process(self._breakdown_cycle())
+        else:
+            self.mtbf = float('inf')
+
+        for _ in range(capacity):
+            p = env.process(self.run())
+            self.worker_processes.append(p)
+
+    def _breakdown_cycle(self):
+        while True:
+            t_up = random.expovariate(1.0 / self.mtbf)
+            yield self.env.timeout(t_up)
+
+            self.is_up = False
+            for p in self.worker_processes:
+                try:
+                    p.interrupt("BREAKDOWN")
+                except RuntimeError:
+                    pass
+
+            t_repair = random.expovariate(1.0 / self.mttr)
+            start_repair = self.env.now
+            yield self.env.timeout(t_repair)
+
+            if self.env.now >= self.last_reset:
+                repair_start_effective = max(start_repair, self.last_reset)
+                self.failed_time_total += max(0.0, self.env.now - repair_start_effective)
+
+            self.is_up = True
+            
+            # Instantly wake up all workers waiting for the machine to be fixed
+            self.repair_event.succeed()
+            self.repair_event = self.env.event() 
+
+    def run(self):
+        while True:
+            with self.resource.request() as res_req:
+                yield res_req
+
+                part = None
+                start_starve = self.env.now
+                start_fails = self.failed_time_total
+                req = None
+
+                while part is None:
+                    if not self.is_up:
+                        try:
+                            yield self.repair_event
+                        except simpy.Interrupt:
+                            pass
+                        continue
+
+                    if req is None:
+                        req = self.input_buffer.get()
+
+                    try:
+                        part = yield req
+                        if self.env.now >= self.last_reset:
+                            gross_wait = self.env.now - max(start_starve, self.last_reset)
+                            fails_during_wait = self.failed_time_total - start_fails
+                            self.wait_input_time += max(0.0, gross_wait - fails_during_wait)
+                    except simpy.Interrupt:
+                        pass
+
+                self.processed_count += 1
+                self.active_count += 1
+
+                w = production_wait_time(self.env.now)
+                if w:
+                    if self.env.now >= self.last_reset:
+                        self.window_wait_time += w
+                    req_w = self.env.timeout(w)
+                    while True:
+                        try:
+                            yield req_w
+                            break
+                        except simpy.Interrupt:
+                            pass
+
+                pt = self.process_time() if callable(self.process_time) else self.process_time
+                remaining = pt
+
+                while remaining > 0:
+                    if not self.is_up:
+                        try:
+                            yield self.repair_event 
+                        except simpy.Interrupt:
+                            pass
+                        continue
+
+                    start_work = self.env.now
+                    try:
+                        yield self.env.timeout(remaining)
+                        self.working_time += (self.env.now - max(start_work, self.last_reset))
+                        remaining = 0
+                    except simpy.Interrupt:
+                        self.working_time += (self.env.now - max(start_work, self.last_reset))
+                        remaining -= (self.env.now - start_work)
+
+                start_block = self.env.now
+                start_fails = self.failed_time_total
+
+                if self.defect_rate is not None and self.defect_sink is not None and random.random() < self.defect_rate:
+                    part["defect"] = 1
+                    req_out = self.defect_sink.put(part)
+                else:
+                    part["defect"] = 0
+                    req_out = self.output_buffer.put(part)
+
+                while True:
+                    try:
+                        yield req_out
+                        break
+                    except simpy.Interrupt:
+                        pass
+
+                gross_block = self.env.now - max(start_block, self.last_reset)
+                fails_during_block = self.failed_time_total - start_fails
+                self.blocked_time += max(0.0, gross_block - fails_during_block)
+                self.active_count -= 1
+
+    def waiting_energy_consumption(self):
+        return self.waiting_power * (self.wait_input_time +
+                                     self.failed_time_total +
+                                     self.blocked_time +
+                                     self.window_wait_time)
+
+    def working_energy_consumption(self):
+        return self.working_power * self.working_time
+
+def part_generator(env, output_buffer):
+    part_id = 0
+    while True:
+        part = {"id": part_id}
+        yield output_buffer.put(part)
+        part_id += 1
+        yield env.timeout(1)
+
+def kwh_per_sec(x):
+    return x / 3600.0
+
+def run_capacities_sim(seed, caps, warmup=WARMUP_SECONDS, measure_until=MEASURE_UNTIL):
+    """
+    Lightweight MOO-capacities simulation using a simplified pipeline as in the provided MOO blueprint.
+    caps: list or tuple of three integers for buffer capacities [cap1, cap2, cap3]
+    Returns the same structure as the heavier simulation: a result dict with 'overall' and 'machine_energy'.
+    """
+    random.seed(seed)
+    env = simpy.Environment()
+
+    caps = list(caps)[:3]
+    cap_buffer1, cap_buffer2, cap_buffer3 = caps
+
+    buffer1 = DelayBuffer(env, cap=cap_buffer1, delay=10)
+    buffer2 = DelayBuffer(env, cap=cap_buffer2, delay=10)
+    buffer3 = DelayBuffer(env, cap=cap_buffer3, delay=10)
+
+    raw_input = simpy.Store(env, capacity=1000)
+    sink = simpy.Store(env, capacity=100000)
+    defects = simpy.Store(env, capacity=100000)
+
+    M1 = Machine(env, "M1", input_buffer=raw_input, output_buffer=buffer1,
+        process_time=5, availability=97.79, mttr=74, 
+        working_power=kwh_per_sec(1), waiting_power=kwh_per_sec(0.5))
+
+    M2 = Machine(env, "M2", input_buffer=buffer1, output_buffer=buffer2,
+        process_time=20, availability=95.0, mttr=100,
+        working_power=kwh_per_sec(1), waiting_power=kwh_per_sec(1))
+
+    M3_parallel = Machine(env, "M3parallel", input_buffer=buffer2, output_buffer=buffer3,
+        process_time=15, availability=90.0, mttr=80,
+        working_power=kwh_per_sec(1), waiting_power=kwh_per_sec(1))
+
+    M4_parallel = Machine(env, "M4parallel", input_buffer=buffer2, output_buffer=buffer3,
+        process_time=15, availability=90.0, mttr=80,
+        working_power=kwh_per_sec(1), waiting_power=kwh_per_sec(1))
+
+    # Merge outputs into buffer3
+    merger(env, M3_parallel.output_buffer, M4_parallel.output_buffer, buffer3)
+
+    M5 = Machine(env, "M5", input_buffer=buffer3, output_buffer=sink,
+        process_time=25, availability=92.0, mttr=90,
+        working_power=kwh_per_sec(1.2), waiting_power=kwh_per_sec(1.0),
+        defect_rate=0.089, defect_sink=defects)
+
+    machines_list = [M1, M2, M3_parallel, M4_parallel, M5]
+
+    env.process(part_generator(env, raw_input))
+    env.run(until=warmup)
+
+    for m in machines_list:
+        reset_machine_stats(m)
+
+    produced_count_before = len(sink.items)
+    wip_samples = []
+    delay_buffers = [buffer1, buffer2, buffer3]
+
+    def sample_wip(env):
+        while True:
+            ready = sum(len(b.items) for b in delay_buffers)
+            in_transit = sum(b.in_transit_count() for b in delay_buffers)
+            in_machines = sum(m.active_count for m in machines_list)
+            wip_samples.append(ready + in_transit + in_machines)
+            # Sample hourly
+            yield env.timeout(60)
+
+    env.process(sample_wip(env))
+    env.run(until=measure_until)
+
+    total_produced = len(sink.items) - produced_count_before
+    hours = (measure_until - warmup) / 3600.0
+    throughput = (total_produced / hours) if hours > 0 else 0.0
+    avg_wip = statistics.mean(wip_samples) if wip_samples else 0.0
+
+    result = {"overall": {
+        "throughput": throughput,
+        "wip": avg_wip,
+        "produced_parts": total_produced},
+        "machine_energy": {}}
+
+    for m in machines_list:
+        waiting_energy = m.waiting_energy_consumption()
+        working_energy = m.working_energy_consumption()
+        total_energy = waiting_energy + working_energy
+        result["machine_energy"][m.name] = {
+            "working_time": m.working_time,
+            "waiting_time": m.failed_time_total + m.blocked_time,
+            "working_energy": working_energy,
+            "waiting_energy": waiting_energy,
+            "total_energy": total_energy}
+
+    return result
+
+def _is_feasible(caps):
+    # Simple constraint: sum of capacities must be <= 20
+    return sum(int(v) for v in caps) <= 20
+
+def evaluate_single_individual(args):
+    """
+    Evaluates a single individual (one set of buffer capacities)
+    over multiple simulation replications.
+    Returns [wip, -throughput] or [nan, nan] if infeasible.
+    """
+    x, n_replications, base_seed, warmup, measure_until = args
+    caps = [int(v) for v in x[:3]]
+
+    if not _is_feasible(caps):
+        # Infeasible point: do not evaluate objectives
+        return [float('nan'), float('nan')]
+
+    throughputs = []
+    wips = []
+
+    # Local RNG to avoid cross-process contention
+    local_rng = random.Random()
+    local_rng.seed(base_seed + sum(caps))
+
+    for r in range(n_replications):
+        seed = base_seed + r + local_rng.randint(0, 1000000)
+        res = run_capacities_sim(seed, caps, warmup, measure_until)
+        throughputs.append(res["overall"]["throughput"])
+        wips.append(res["overall"]["wip"])
+
+    avg_throughput = statistics.mean(throughputs)
+    avg_wip = statistics.mean(wips)
+
+    return [avg_wip, -avg_throughput]
+
+class DelayBuffer:
+    """Single store with a global capacity cap that includes in-transit + ready."""
+    def __init__(self, env, cap, delay):
+        self.env = env
+        self.delay = delay
+        self.cap = cap
+        self.store = simpy.Store(env, capacity=cap)
+        self.tokens = simpy.Container(env, init=cap, capacity=cap)
+        self._in_transit = 0
+
+    def put(self, part):
+        return self.env.process(self._delayed_put(part))
+
+    def get(self):
+        return self.env.process(self._get_and_release())
+
+    @property
+    def items(self):
+        return self.store.items
+
+    @property
+    def capacity(self):
+        return self.store.capacity
+
+    def in_transit_count(self):
+        return self._in_transit
+
+    def free_capacity(self):
+        return int(self.tokens.level)
+
+    def _delayed_put(self, part):
+        yield self.tokens.get(1)
+        self._in_transit += 1
+        try:
+            yield self.env.timeout(self.delay)
+            yield self.store.put(part)
+        finally:
+            self._in_transit -= 1
+
+    def _get_and_release(self):
+        part = yield self.store.get()
+        yield self.tokens.put(1)
+        return part
+
+class BufferCapacityProblemImpl(Problem):
+    def __init__(self, n_var=3, n_obj=2, n_constr=0,
+                 xl=None, xu=None,
+                 n_replications=5,
+                 base_seed=RANDOM_SEED,
+                 n_cores=None):
+        super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr,
+                         xl=xl, xu=xu, type_var=int)
+        self.n_replications = n_replications
+        self.base_seed = base_seed
+        self.n_cores = n_cores
+
+    def _evaluate(self, X, out, *args, **kwargs):
+        X = np.asarray(X)
+        n_individuals = X.shape[0]
+
+        tasks = [
+            (X[i], self.n_replications, self.base_seed, WARMUP_SECONDS, MEASURE_UNTIL)
+            for i in range(n_individuals)
+        ]
+
+        n_workers = self.n_cores if self.n_cores is not None and self.n_cores > 0 else max(1, multiprocessing.cpu_count())
+
+        with multiprocessing.Pool(processes=min(n_workers, 64)) as pool:
+            results = pool.map(evaluate_single_individual, tasks)
+
+        out["F"] = np.array(results, dtype=float)
+
+def run_nsga2_optimization(
+    pop_size=50,
+    n_gen=50,
+    n_replications=5,
+    base_seed=RANDOM_SEED,
+    verbose=True,
+    n_cores=50
+):
+    """
+    Run NSGA-II on the buffer capacity optimization problem.
+    """
+    problem = BufferCapacityProblemImpl(
+        n_var=3,
+        n_obj=2,
+        xl=np.array([1, 1, 1]),
+        xu=np.array([10, 10, 10]),
+        n_replications=n_replications,
+        base_seed=base_seed,
+        n_cores=n_cores
+    )
+
+    sampling = IntegerRandomSampling()
+
+    crossover = SBX(prob=0.9, eta=15)
+    mutation = PM(prob=1.0 / problem.n_var, eta=20)
+
+    algorithm = NSGA2(
+        pop_size=pop_size,
+        sampling=sampling,
+        crossover=crossover,
+        mutation=mutation,
+        eliminate_duplicates=True
+    )
+
+    termination = get_termination("n_gen", n_gen)
+
+    res = minimize(
+        problem,
+        algorithm,
+        termination,
+        seed=base_seed,
+        save_history=True,
+        verbose=verbose
+    )
+
+    return res
+
+def export_history_to_csv(result, filename="moo_simulation_results.csv"):
+    """
+    Export all solutions from every generation (including initial population)
+    with their KPIs and decision variables to a CSV file.
+    Infeasible solutions (with NaN objectives) are skipped.
+    """
+    output_dir = "results"
+    os.makedirs(output_dir, exist_ok=True)
+    filepath = os.path.join(output_dir, filename)
+
+    fieldnames = [
+        "gen",
+        "ind",
+        "buffer1_cap",
+        "buffer2_cap",
+        "buffer3_cap",
+        "wip",
+        "throughput"
+    ]
+
+    rows = []
+    history = getattr(result, "history", None)
+
+    def add_row_from_xF(X, F, gen_idx, ind_idx):
+        if X is None or F is None:
+            return
+        caps = [int(v) for v in X[:3]]
+        f = F
+        if np.any(np.isnan(np.array(f))):
+            return
+        wip = float(f[0])
+        throughput = float(-f[1])  # stored as -throughput
+        row = {
+            "gen": gen_idx,
+            "ind": ind_idx,
+            "buffer1_cap": caps[0],
+            "buffer2_cap": caps[1],
+            "buffer3_cap": caps[2],
+            "wip": wip,
+            "throughput": throughput
+        }
+        rows.append(row)
+
+    if isinstance(history, list):
+        for gen_idx, algo in enumerate(history):
+            pop = getattr(algo, "pop", None)
+            if pop is None:
+                continue
+            X = pop.get("X") if hasattr(pop, "get") else None
+            F = pop.get("F") if hasattr(pop, "get") else None
+            if isinstance(X, (list, tuple)) and isinstance(F, (list, tuple)):
+                for ind_idx, (x, f) in enumerate(zip(X, F)):
+                    add_row_from_xF(x, f, gen_idx, ind_idx)
+    else:
+        # Fallback attempt: final population stored in result.F and result.X if available
+        X = getattr(result, "X", None)
+        F = getattr(result, "F", None)
+        if X is not None and F is not None:
+            for ind_idx, (x, f) in enumerate(zip(X, F)):
+                add_row_from_xF(x, f, 0, ind_idx)
+
+    with open(filepath, mode="w", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+# Lightweight harness to ensure entry point works
+if __name__ == "__main__":
+    # Run NSGA-II optimization with 50 cores as required, then export to CSV
+    result = run_nsga2_optimization(pop_size=50, n_gen=50, n_replications=5, verbose=True, n_cores=50)
+    export_history_to_csv(result, filename="moo_simulation_results.csv")
