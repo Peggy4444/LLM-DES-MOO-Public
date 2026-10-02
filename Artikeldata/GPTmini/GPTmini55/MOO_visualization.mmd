@@ -1,0 +1,39 @@
+flowchart TD
+Start["**Start**<br/>Begin optimization flow"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var=6 n_obj=2 n_constr=1<br/>xl {1} xu {10} n_replications base_seed n_cores<br/>Methods _evaluate"]
+DecisionVars["**Decision Variables**<br/>Six buffer capacities<br/>post_loading post_conveyor post_washing pre_press1 pre_press2 post_press12<br/>Values integer {1-10}"]
+Objectives["**Objectives**<br/>Minimize WIP<br/>Maximize throughput implemented as minimize negative throughput"]
+RunOpt["**run_nsga2_optimization**<br/>Create problem instance and NSGA2 algorithm<br/>Configure pop_size n_gen n_replications n_cores"]
+NSGA2Node["**NSGA2 Algorithm**<br/>pop_size n_gen sampling SBX mutation PM<br/>eliminate_duplicates"]
+GeneratePop["**Generate Population**<br/>IntegerRandomSampling produces integer candidate vectors<br/>Population size pop_size"]
+PoolNode["**Multiprocessing Pool**<br/>processes n_cores maps evaluate_single_individual<br/>Parallel evaluation of population"]
+EvalNode["**evaluate_single_individual**<br/>Receive candidate capacities and n_replications<br/>Run multiple replications of run_simulation<br/>Return F list and G value"]
+RunSimNode["**run_simulation**<br/>Build simpy environment and buffers<br/>Instantiate Machines and DelayBuffers<br/>Warmup and measure until measure_until<br/>Return overall metrics throughput wip produced_parts machine_energy"]
+MachineNode["**Machine Class**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+DelayBufferNode["**DelayBuffer Class**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get in_transit_count free_capacity"]
+AggregateNode["**Aggregate Results**<br/>Pool returns list of f_vals and g_vals<br/>Construct F matrix and G matrix for pymoo"]
+NSGA2Loop["**NSGA2 Iteration Loop**<br/>NSGA2 uses F and G to select and breed new population<br/>Repeat until termination"]
+TerminationNode["**Termination**<br/>Stop when generation count n_gen reached<br/>minimize returns result with history"]
+ExportNode["**export_history_to_csv**<br/>Scan result history per generation<br/>Filter feasible solutions G <= 0<br/>Write CSV of buffer settings wip throughput"]
+End["**End**<br/>Optimized Pareto front exported and CSV available"]
+
+Start --> BufferProblem
+BufferProblem --> DecisionVars
+BufferProblem --> Objectives
+BufferProblem --> RunOpt
+RunOpt --> NSGA2Node
+NSGA2Node --> GeneratePop
+GeneratePop --> PoolNode
+PoolNode --> EvalNode
+EvalNode --> RunSimNode
+RunSimNode --> MachineNode
+RunSimNode --> DelayBufferNode
+RunSimNode --> EvalNode
+EvalNode --> PoolNode
+PoolNode --> AggregateNode
+AggregateNode --> BufferProblem
+BufferProblem --> NSGA2Loop
+NSGA2Loop --> GeneratePop
+NSGA2Loop --> TerminationNode
+TerminationNode --> ExportNode
+ExportNode --> End

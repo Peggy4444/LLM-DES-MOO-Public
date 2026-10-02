@@ -1,0 +1,39 @@
+flowchart TD
+  MOO_NSGA2["**MOO NSGA II**<br/>Run NSGA2 optimization loop<br/>Pop size n_gen selection crossover mutation"]
+  BUFFER_PROBLEM["**BufferCapacityProblem**<br/>Decision vars caps 6 integers {1-10}<br/>Attributes n_replications base_seed n_cores<br/>Method _evaluate(X) returns F matrix"]
+  MULTIPROC_POOL["**Multiprocessing Pool**<br/>Parallel evaluation of individuals<br/>Uses n_cores cores"]
+  EVALUATE_INDIV["**evaluate_single_individual**<br/>Evaluates one candidate over replications<br/>Inputs caps base_seed n_replications<br/>Outputs avg_wip and -avg_throughput"]
+  CAPS_INPUT["**Decision Variables**<br/>6 buffer capacities<br/>Integer values {1-10}"]
+  RUN_WITH_CAPS["**run_simulation_with_caps**<br/>Construct model using caps<br/>Warmup sampling and measurement<br/>Returns KPI result dict"]
+  SIMULATION["**Simulation Model**<br/>SimPy environment run_simulation core<br/>Samples throughput and WIP over time<br/>Returns result dict per replication"]
+  DELAY_BUFFER["**DelayBuffer**<br/>Attributes cap delay tokens store in_transit<br/>Methods put get in_transit_count free_capacity"]
+  MACHINE["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+  SAMPLE_PROC["**WIP Sampler**<br/>Samples ready in buffers in_transit and active machines every 600s<br/>Produces WIP samples"]
+  RESULT_NODE["**Optimization Result**<br/>Pareto front and history of populations<br/>Used for decision making"]
+  EXPORT_CSV["**export_history_to_csv**<br/>Export solutions from all generations to CSV<br/>File results/moo_simulation_results.csv"]
+  OBJECTIVES["**Objectives**<br/>Minimize WIP<br/>Maximize throughput"]
+
+  %% Flow connections
+  MOO_NSGA2 --> BUFFER_PROBLEM
+  BUFFER_PROBLEM --> MULTIPROC_POOL
+  MULTIPROC_POOL --> EVALUATE_INDIV
+  EVALUATE_INDIV --> RUN_WITH_CAPS
+  CAPS_INPUT --> RUN_WITH_CAPS
+  RUN_WITH_CAPS --> SIMULATION
+  SIMULATION --> DELAY_BUFFER
+  SIMULATION --> MACHINE
+  SIMULATION --> SAMPLE_PROC
+  DELAY_BUFFER --> MACHINE
+  MACHINE --> SIMULATION
+  SAMPLE_PROC --> SIMULATION
+  SIMULATION --> EVALUATE_INDIV
+  EVALUATE_INDIV --> BUFFER_PROBLEM
+  BUFFER_PROBLEM --> MOO_NSGA2
+  MOO_NSGA2 --> RESULT_NODE
+  RESULT_NODE --> EXPORT_CSV
+  MOO_NSGA2 --> OBJECTIVES
+
+  %% Notes on interactions for clarity for a production manager
+  BUFFER_PROBLEM --- CAPS_INPUT
+  MULTIPROC_POOL --- "Tasks mapping of candidate solutions"
+  EVALUATE_INDIV --- "Aggregates replications to mean WIP and mean throughput"

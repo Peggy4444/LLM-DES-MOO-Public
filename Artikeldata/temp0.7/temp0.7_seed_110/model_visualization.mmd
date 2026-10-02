@@ -1,0 +1,115 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+raw_input["**Raw input**
+source: part_generator
+cap=1000"]:::store
+raw_input --> loading_robot
+
+loading_robot["**Loading robot**
+CT=12s
+avail=90.49%"]:::machine
+loading_robot --> post_loading_buffer
+
+post_loading_buffer["**Post loading buffer**
+type=DelayBuffer
+cap=2
+delay=10s"]:::buffer
+post_loading_buffer --> conveyor_belt
+
+conveyor_belt["**Conveyor belt**
+CT=6s
+avail=100%"]:::machine
+conveyor_belt --> post_conveyor_buffer
+
+post_conveyor_buffer["**Post conveyor buffer**
+type=DelayBuffer
+cap=2
+delay=10s"]:::buffer
+post_conveyor_buffer --> washing_machine
+
+washing_machine["**Washing machine**
+CT=14s
+avail=80.89%"]:::machine
+washing_machine --> post_washing_buffer
+
+post_washing_buffer["**Post washing buffer**
+type=DelayBuffer
+cap=2
+delay=10s"]:::buffer
+post_washing_buffer --> hantering_cell
+
+hantering_cell["**Hantering cell**
+CT=25s
+avail=97.79%"]:::machine
+hantering_cell --> pre_press_split_in
+
+pre_press_split_in["**Pre-press split in**
+helper store
+cap=6"]:::helper
+pre_press_split_in --> splitter
+
+splitter["**Splitter (50/50)**
+round-robin
+toggle"]:::helper
+splitter --> pre_press1_buffer
+splitter --> pre_press2_buffer
+
+pre_press1_buffer["**Pre-press1 buffer**
+type=DelayBuffer
+cap=3
+delay=32s"]:::buffer
+pre_press1_buffer --> presses_cell1
+
+pre_press2_buffer["**Pre-press2 buffer**
+type=DelayBuffer
+cap=3
+delay=32s"]:::buffer
+pre_press2_buffer --> presses_cell2
+
+presses_cell1["**Presses cell 1**
+CT=175s
+avail=87.79%"]:::machine
+presses_cell1 --> press1_out
+
+presses_cell2["**Presses cell 2**
+CT=176s
+avail=87.69%"]:::machine
+presses_cell2 --> press2_out
+
+press1_out["**Press1 out**
+helper store
+cap=3"]:::helper
+press2_out["**Press2 out**
+helper store
+cap=3"]:::helper
+
+press1_out --> merger
+press2_out --> merger
+
+merger["**Merger**
+joins parallel outputs"]:::helper
+merger --> post_press12_buffer
+
+post_press12_buffer["**Post press12 buffer**
+type=DelayBuffer
+cap=3
+delay=32s"]:::buffer
+post_press12_buffer --> quality_station
+
+quality_station["**Quality station cell**
+CT=41s
+avail=85.87%
+defect_rate=8.9%"]:::machine
+quality_station --> sink
+quality_station --> defects
+
+sink["**Finished goods sink**
+store (finished)"]:::sink
+defects["**Defects sink**
+scrap store"]:::defect

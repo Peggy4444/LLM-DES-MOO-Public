@@ -1,0 +1,32 @@
+flowchart TD
+ProductionLineProblemNode["**ProductionLineProblem**<br/>n_var 6<br/>n_obj 2<br/>xl {1-10} xu {1-10}<br/>pop_size attribute<br/>_evaluate method populates F and records results"]
+NSGA2_AlgorithmNode["**NSGA2 Algorithm**<br/>sampling IntegerRandomSampling<br/>crossover SBX mutation PM<br/>optimizes two objectives wip min throughput max<br/>invoked by minimize"]
+MainNode["**main**<br/>configures problem and algorithm<br/>termination n_gen<br/>calls minimize and triggers result export"]
+Pool_Process["**Worker Pool**<br/>multiprocessing Pool size 50<br/>parallel evaluation of population individuals"]
+Evaluator["**evaluate_individual**<br/>maps decision vector x to buffer capacities<br/>enforces constraint total_buffer_capacity <= 40<br/>calls SimulationRunner and returns objectives wip and negative throughput"]
+SimulationRunner["**SimulationRunner run_simulation**<br/>inputs seed and buffer_caps<br/>constructs machines and buffers<br/>runs warmup sampling and measurement<br/>outputs overall metrics throughput wip produced_parts and per machine energy"]
+DelayBuffer_Class["**DelayBuffer**<br/>attributes cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"]
+Machine_Class["**Machine**<br/>attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+ResultsStorage["**ResultsStorage**<br/>accumulates per individual simulation outputs<br/>filters infeasible solutions total_buffer_capacity > 40<br/>writes CSV results/moo_simulation_results.csv"]
+ParetoFront["**Pareto Front**<br/>res.X and res.F available after minimize<br/>used for decision support and inspection"]
+
+MainNode --> ProductionLineProblemNode
+MainNode --> NSGA2_AlgorithmNode
+MainNode --> ResultsStorage
+NSGA2_AlgorithmNode --> ProductionLineProblemNode
+ProductionLineProblemNode --> Pool_Process
+Pool_Process --> Evaluator
+Evaluator --> SimulationRunner
+SimulationRunner --> DelayBuffer_Class
+SimulationRunner --> Machine_Class
+ProductionLineProblemNode --> ResultsStorage
+NSGA2_AlgorithmNode --> ParetoFront
+MainNode --> ParetoFront
+
+ProductionLineProblemNode ---|uses| Evaluator
+Evaluator ---|parallel calls| Pool_Process
+Pool_Process ---|executes| SimulationRunner
+SimulationRunner ---|instantiates| Machine_Class
+SimulationRunner ---|instantiates| DelayBuffer_Class
+ProductionLineProblemNode ---|stores| ResultsStorage
+NSGA2_AlgorithmNode ---|outputs| ResultsStorage

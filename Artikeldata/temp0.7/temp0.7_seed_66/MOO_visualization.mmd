@@ -1,0 +1,31 @@
+flowchart TD
+OptimizationRunner["**Optimization Runner**<br/>Configures NSGA2 algorithm and problem"]
+NSGA2Alg["**NSGA2 Algorithm**<br/>Handles population crossover mutation selection and runs minimize"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores Methods _evaluate(X,out)"]
+DecisionVars["**Decision Variables**<br/>Six buffer capacities each discrete in {1-10}"]
+MultiprocPool["**Multiprocessing Pool**<br/>Parallel evaluation of individuals using configured n_cores"]
+EvalIndividual["**evaluate_single_individual**<br/>Receives one candidate caps runs n_replications returns [avg_wip -avg_throughput]"]
+RunSimCaps["**run_simulation_with_caps**<br/>Creates simulation with given caps and returns throughput and wip metrics"]
+SimulationModel["**Simulation Model**<br/>SimPy environment part generator sampling WIP and collecting metrics"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay store tokens Methods put get in_transit_count free_capacity"]
+MachineClass["**Machine Class**<br/>Attributes process_time availability mttr working_power waiting_power Methods run reset_machine_stats waiting_energy_consumption working_energy_consumption"]
+ObjectivesNode["**Objectives**<br/>f1 minimize WIP f2 minimize negative throughput equals maximize throughput"]
+HistoryExport["**Export History**<br/>export_history_to_csv saves generations individuals and objectives to CSV"]
+
+OptimizationRunner --> NSGA2Alg
+OptimizationRunner --> BufferProblem
+NSGA2Alg --> BufferProblem
+BufferProblem --> DecisionVars
+BufferProblem --> MultiprocPool
+MultiprocPool --> EvalIndividual
+DecisionVars --> EvalIndividual
+EvalIndividual --> RunSimCaps
+RunSimCaps --> SimulationModel
+SimulationModel --> DelayBufferClass
+SimulationModel --> MachineClass
+RunSimCaps --> EvalIndividual
+EvalIndividual --> BufferProblem
+BufferProblem --> NSGA2Alg
+NSGA2Alg --> ObjectivesNode
+OptimizationRunner --> HistoryExport
+BufferProblem --> HistoryExport

@@ -1,0 +1,35 @@
+flowchart TD
+Start["**Start**<br/>Initiate optimization run"]
+DecisionVars["**Decision Variables**<br/>buffer capacities X0 to X5<br/>discrete range {1-10}"]
+NSGA2Alg["**NSGA2 Algorithm**<br/>population, generations, sampling crossover mutation<br/>iterative evolution loop"]
+ProblemNode["**BufferCapacityProblem**<br/>attributes n_var 6 n_obj 2 n_replications base_seed n_cores<br/>method _evaluate evaluates a batch of individuals"]
+EvalPool["**Multiprocessing Pool**<br/>parallelize evaluations across cores<br/>maps tasks to worker processes"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual<br/>for each individual run n replications<br/>returns objectives avg wip and negative avg throughput"]
+SimCaps["**Simulation Runner With Caps**<br/>run_simulation_with_caps builds env with given caps<br/>instantiates buffers machines sinks and runs simulation"]
+SimCore["**Simulation Core**<br/>run_simulation executes simpy model<br/>returns metrics throughput wip machine energy per machine"]
+MachineComp["**Machine Component**<br/>attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+DelayBufferComp["**DelayBuffer Component**<br/>attributes cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"]
+PartGenComp["**Part Generator**<br/>generates raw parts at rate one per second<br/>limits WIP at entrance"]
+PopulationHistory["**Population History**<br/>stores X and F for each generation<br/>used for analysis and export"]
+ParetoFront["**Pareto Front**<br/>non dominated solutions across objectives<br/>trade off WIP min and throughput max"]
+Exporter["**CSV Exporter**<br/>export_history_to_csv writes generation solutions to CSV<br/>saves detailed KPI and decision variables to results folder"]
+ResultsFile["**Results File**<br/>moo_simulation_results.csv in results folder<br/>contains generation index individual caps WIP throughput"]
+End["**End**<br/>Optimization complete and results exported"]
+
+Start --> DecisionVars
+DecisionVars --> NSGA2Alg
+NSGA2Alg --> ProblemNode
+ProblemNode --> EvalPool
+EvalPool --> Evaluator
+Evaluator --> SimCaps
+SimCaps --> SimCore
+SimCore --> MachineComp
+SimCore --> DelayBufferComp
+SimCore --> PartGenComp
+Evaluator --> ProblemNode
+ProblemNode --> NSGA2Alg
+NSGA2Alg --> PopulationHistory
+NSGA2Alg --> ParetoFront
+NSGA2Alg --> Exporter
+Exporter --> ResultsFile
+ResultsFile --> End

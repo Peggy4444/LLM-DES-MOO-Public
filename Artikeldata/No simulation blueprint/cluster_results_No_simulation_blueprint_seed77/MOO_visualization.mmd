@@ -1,0 +1,38 @@
+flowchart TD
+ProductionManager["**Production Manager**<br/>Defines objectives wip min and throughput max and inputs"]
+MOOController["**MOO Controller**<br/>run_nsga2_optimization<br/>configures NSGA2 and termination"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Attributes n_var=6 xl and xu {1-10} n_replications base_seed n_cores<br/>Method _evaluate evaluates batch of individuals"]
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>population sampling crossover mutation<br/>pop_size and n_gen control loop"]
+Termination["**Termination**<br/>stop when n_gen reached or criteria met"]
+ParallelPool["**Parallel Evaluator Pool**<br/>multiprocessing pool size n_cores<br/>maps evaluation tasks"]
+EvaluateIndividual["**evaluate_single_individual**<br/>prepare local seed and caps<br/>calls run_simulation_for_caps<br/>returns objectives wip and negative throughput"]
+DecisionVariables["**Decision Variables**<br/>Buffer capacities for 6 buffers {1-10} each"]
+RunSimulationForCaps["**run_simulation_for_caps**<br/>apply caps to global BUF_CONF<br/>run n_replications distinct seeds<br/>restore original capacities<br/>return avg_throughput and avg_wip"]
+RunReplication["**run_replication**<br/>create simpy environment and energy tracker<br/>instantiate machines and buffers<br/>start processes and run until SIM_TIME<br/>compute throughput per hour mean_wip energy_per_part"]
+MachineClass["**Machine**<br/>attributes mean avail mtbf mttr energy_idle energy_work broken<br/>methods breakdown_process process_part"]
+BufferClass["**Buffer**<br/>attributes cap ptime store<br/>methods put get process_delay"]
+EnergyTrackerClass["**EnergyTracker**<br/>attribute energy<br/>method add energy consumed"]
+ResultsAggregator["**Results Aggregator**<br/>collects per replication throughputs and wip<br/>computes averages returned to evaluator"]
+Objectives["**Objectives**<br/>f1 avg_wip to minimize<br/>f2 negative avg_throughput to minimize thus maximize throughput"]
+HistoryExporter["**CSV Exporter**<br/>export_history_to_csv<br/>writes generation individual capacities wip throughput to file"]
+
+ProductionManager --> MOOController
+MOOController --> NSGA2Algorithm
+MOOController --> BufferCapacityProblem
+NSGA2Algorithm --> BufferCapacityProblem
+NSGA2Algorithm --> Termination
+BufferCapacityProblem --> ParallelPool
+ParallelPool --> EvaluateIndividual
+DecisionVariables --> EvaluateIndividual
+EvaluateIndividual --> RunSimulationForCaps
+RunSimulationForCaps --> RunReplication
+RunReplication --> MachineClass
+RunReplication --> BufferClass
+RunReplication --> EnergyTrackerClass
+RunReplication --> ResultsAggregator
+ResultsAggregator --> EvaluateIndividual
+EvaluateIndividual --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2Algorithm
+NSGA2Algorithm --> MOOController
+MOOController --> HistoryExporter
+HistoryExporter --> ProductionManager

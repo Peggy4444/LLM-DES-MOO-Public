@@ -1,0 +1,37 @@
+flowchart TD
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Attributes: n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods: _evaluate - evaluate population using multiprocessing and return objective matrix"]
+NSGA2Algo["**NSGA2_Algorithm**<br/>Attributes: pop_size sampling crossover mutation eliminate_duplicates<br/>Methods: evolve - selection crossover mutation and population update"]
+MOO_Controller["**MOO_Controller**<br/>Responsibilities: configure problem and algorithm<br/>Methods: run_nsga2_optimization - start optimization and manage termination"]
+MPPool["**MultiprocessingPool**<br/>Attributes: n_cores worker processes<br/>Methods: map - distribute evaluate tasks across cores"]
+EvaluateIndividual["**evaluate_single_individual**<br/>Inputs: candidate caps seed n_replications<br/>Methods: run replications using SimulationRunner<br/>Outputs: average WIP and negative average throughput"]
+SimulationRunner["**SimulationRunner**<br/>Inputs: caps range {1-10} seed warmup measure_until<br/>Methods: run_simulation_with_caps - build environment run simulation collect metrics<br/>Outputs: metrics throughput WIP produced_parts machine_energy"]
+ProductionSim["**ProductionSimulation**<br/>Components: simpy Environment part_generator stores splitters mergers<br/>Methods: run until measure collect wip samples and machine energy"]
+DelayBuffer["**DelayBuffer**<br/>Attributes: cap delay store tokens _in_transit<br/>Methods: put get in_transit_count free_capacity"]
+Machine["**Machine**<br/>Attributes: name process_time availability mttr capacity working_power waiting_power defect_rate defect_sink resource state stats<br/>Methods: run breakdown_cycle waiting_energy_consumption working_energy_consumption reset_stats"]
+Objectives["**Objectives**<br/>f1 minimize WIP<br/>f2 maximize Throughput"]
+PopulationHistory["**PopulationHistory**<br/>Stores: generations individuals X F<br/>Methods: append generation snapshot"]
+ResultExporter["**ResultExporter**<br/>Methods: export_history_to_csv - write generation records to CSV results directory"]
+InputVariables["**InputVariables**<br/>Buffer capacities for six buffers<br/>Domain each variable {1-10} discrete integer"]
+
+MOO_Controller --> BufferCapacityProblem
+MOO_Controller --> NSGA2Algo
+MOO_Controller --> ResultExporter
+BufferCapacityProblem --> MPPool
+MPPool --> EvaluateIndividual
+EvaluateIndividual --> SimulationRunner
+SimulationRunner --> ProductionSim
+ProductionSim --> DelayBuffer
+ProductionSim --> Machine
+DelayBuffer --> Machine
+EvaluateIndividual --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2Algo
+NSGA2Algo --> PopulationHistory
+PopulationHistory --> ResultExporter
+NSGA2Algo --> Objectives
+InputVariables --> BufferCapacityProblem
+
+%% Data flow annotations
+BufferCapacityProblem -. sends candidate batches .-> MPPool
+MPPool -. returns evaluation results .-> BufferCapacityProblem
+NSGA2Algo -. reads objective matrix .-> BufferCapacityProblem
+ResultExporter -. consumes history .-> PopulationHistory

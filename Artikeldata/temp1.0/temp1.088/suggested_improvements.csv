@@ -1,0 +1,4 @@
+PostLoadingBuffer,PostConveyorBuffer,PostWashingBuffer,PrePress1Buffer,PrePress2Buffer,PostPress12Buffer,throughput,wip
+1,1,1,2,3,6,27.454761904761902,14.23154761904762
+1,1,1,2,3,3,27.327380952380956,14.230158730158731
+1,1,1,2,2,3,27.28809523809524,13.138293650793653

@@ -1,0 +1,56 @@
+flowchart TD
+Start["**Start**<br/>Execute optimization script"]
+
+RunNSGA2["**Run NSGA2 Optimization**<br/>Configure algorithm parameters<br/>pop_size, n_gen, n_replications, base_seed, n_cores"]
+
+CreateProblem["**Create Problem Instance**<br/>Class BufferCapacityProblem<br/>n_var = 6, n_obj = 2<br/>xl {1-10}, xu {1-10}, n_replications, base_seed, n_cores"]
+
+NSGA2Algo["**NSGA2 Algorithm**<br/>Sampling SBX PM operators<br/>Elitism and diversity maintenance"]
+
+Minimize["**Minimize Call**<br/>Start optimization loop<br/>Termination by generation"]
+
+ProblemEvaluate["**Problem._evaluate**<br/>Receive population X<br/>Prepare evaluation tasks for individuals"]
+
+MultiprocPool["**Multiprocessing Pool**<br/>processes = n_cores<br/>Map evaluate tasks to workers"]
+
+EvalSingle["**evaluate_single_individual**<br/>Inputs caps vector and seeds<br/>Run n_replications per candidate<br/>Aggregate avg_wip and avg_throughput as [wip, -throughput]"]
+
+RunSimCaps["**run_simulation_with_caps**<br/>Inputs seed and caps<br/>Build simulation environment<br/>Return metrics overall and machine_energy"]
+
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap, delay, tokens, store<br/>Methods put, get, free_capacity, in_transit_count"]
+
+MachineClass["**Machine Class**<br/>Attributes name, input_buffer, output_buffer, process_time, availability, mttr, working_power, waiting_power, capacity<br/>Methods run, _breakdown_cycle, waiting_energy_consumption, working_energy_consumption"]
+
+PartGenerator["**part_generator Process**<br/>Feeds raw_input at fixed rate"]
+
+SimulationFlow["**Simulation Flow**<br/>Warmup run then measurement<br/>Sample WIP every 600 seconds<br/>Compute throughput and avg_wip"]
+
+Objectives["**Objectives**<br/>Minimize wip<br/>Maximize throughput represented as minimize negative throughput"]
+
+NSGA2Update["**Population Update**<br/>Receive F values from Problem._evaluate<br/>Selection crossover mutation to generate new population"]
+
+ExportCSV["**export_history_to_csv**<br/>Iterate result.history<br/>Write generations individuals caps wip throughput to results/moo_simulation_results.csv"]
+
+End["**End**<br/>CSV exported and optimization complete"]
+
+%% Flow connections
+Start --> RunNSGA2
+RunNSGA2 --> CreateProblem
+CreateProblem --> NSGA2Algo
+NSGA2Algo --> Minimize
+Minimize --> ProblemEvaluate
+ProblemEvaluate --> MultiprocPool
+MultiprocPool --> EvalSingle
+EvalSingle --> RunSimCaps
+RunSimCaps --> DelayBufferClass
+RunSimCaps --> MachineClass
+RunSimCaps --> PartGenerator
+RunSimCaps --> SimulationFlow
+SimulationFlow --> EvalSingle
+EvalSingle --> Objectives
+Objectives --> ProblemEvaluate
+ProblemEvaluate --> NSGA2Update
+NSGA2Update --> NSGA2Algo
+NSGA2Algo --> Minimize
+Minimize --> ExportCSV
+ExportCSV --> End

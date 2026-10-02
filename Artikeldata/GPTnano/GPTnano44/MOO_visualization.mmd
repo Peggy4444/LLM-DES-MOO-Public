@@ -1,0 +1,19 @@
+flowchart TD
+InputVariables_Caps["**Input Variables Caps**<br/>Three capacities cap1 cap2 cap3 each in {1-10}"]
+BufferCapacityProblem_Class["**BufferCapacityProblem Class**<br/>Defines 3 decision variables for buffers with bounds {1-10} and a constraint that sum of caps must not exceed 25. Objectives WIP and -Throughput. Uses 5 replications per evaluation."]
+EvaluateSingleIndividual_Function["**Evaluate Single Individual**<br/>Evaluates one candidate by running multiple simulation replications and returns averaged WIP and negative throughput."]
+RunSimulation_Function["**Run Simulation**<br/>Executes the production simulation with the chosen caps and returns throughput and WIP statistics."]
+OutputObjectives_WIP_Throughput["**Output Objectives**<br/>F contains WIP and negative throughput; G contains the constraint violation for sum of caps."]
+MOEWorkflow["**MOO Evaluation Loop**<br/>NSGA-II coordinates evaluation, aggregates F and G, and updates generations across the population."]
+NSTools["**NSGA-II Tools**<br/>SBX crossover, PM mutation, Integer Random Sampling, termination by generation count."]
+Postprocess["**Postprocessing CSV Export**<br/>Exports feasible solutions from history to CSV for reporting."]
+
+InputVariables_Caps --> BufferCapacityProblem_Class
+BufferCapacityProblem_Class --> EvaluateSingleIndividual_Function
+EvaluateSingleIndividual_Function --> RunSimulation_Function
+RunSimulation_Function --> OutputObjectives_WIP_Throughput
+OutputObjectives_WIP_Throughput --> MOEWorkflow
+MOEWorkflow --> BufferCapacityProblem_Class
+NSTools --> MOEWorkflow
+MOEWorkflow --> NSTools
+MOEWorkflow --> Postprocess

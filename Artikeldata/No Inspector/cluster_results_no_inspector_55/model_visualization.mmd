@@ -1,0 +1,53 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+part_generator["**Part\ngenerator**\nrate=1s"]:::helper
+raw_input["**Raw\nInput**\ncap=1000"]:::store
+loading_robot["**Loading\nrobot**\nCT=12s\nAVB=90.49%\nMTTR=68s"]:::machine
+post_loading_buffer["**Post\nloading\nDelayBuffer**\ncap=2\ndelay=10s"]:::buffer
+conveyor_belt["**Conveyor\nbelt**\nCT=6s\nAVB=100%"]:::machine
+post_conveyor_buffer["**Post\nconveyor\nDelayBuffer**\ncap=2\ndelay=10s"]:::buffer
+washing_machine["**Washing\nmachine**\nCT=14s\nAVB=80.89%\nMTTR=269s"]:::machine
+post_washing_buffer["**Post\nwashing\nDelayBuffer**\ncap=2\ndelay=10s"]:::buffer
+hantering_cell["**Hantering\ncell**\nCT=25s\nAVB=97.79%\nMTTR=74s"]:::machine
+pre_press_split_buffer["**Pre-press\nsplit\nbuffer**\ncap=6"]:::buffer
+splitter_node["**Splitter\n(1:1\ntoggle)**"]:::helper
+pre_press1_buffer["**Pre-press1\nDelayBuffer**\ncap=3\ndelay=32s"]:::buffer
+pre_press2_buffer["**Pre-press2\nDelayBuffer**\ncap=3\ndelay=32s"]:::buffer
+presses_cell1["**Presses\ncell 1**\nCT=175s\nAVB=87.79%\nMTTR=73s"]:::machine
+presses_cell2["**Presses\ncell 2**\nCT=176s\nAVB=87.69%\nMTTR=74s"]:::machine
+press1_out["**Press1\noutput\nbuffer**\ncap=3"]:::buffer
+press2_out["**Press2\noutput\nbuffer**\ncap=3"]:::buffer
+merger_node["**Merger\n(press1+press2)**"]:::helper
+post_press12_buffer["**Post-press12\nDelayBuffer**\ncap=3\ndelay=32s"]:::buffer
+quality_station["**Quality\nstation\ncell**\nCT=41s\nAVB=85.87%\nMTTR=66s\nDEF=8.9%"]:::machine
+sink_node["**Finished\ngoods\nsink**"]:::sink
+defects_node["**Defect\nscrap\nsink**"]:::defect
+
+part_generator --> raw_input
+raw_input --> loading_robot
+loading_robot --> post_loading_buffer
+post_loading_buffer --> conveyor_belt
+conveyor_belt --> post_conveyor_buffer
+post_conveyor_buffer --> washing_machine
+washing_machine --> post_washing_buffer
+post_washing_buffer --> hantering_cell
+hantering_cell --> pre_press_split_buffer
+pre_press_split_buffer --> splitter_node
+splitter_node -->|to press1| pre_press1_buffer
+splitter_node -->|to press2| pre_press2_buffer
+pre_press1_buffer --> presses_cell1
+pre_press2_buffer --> presses_cell2
+presses_cell1 --> press1_out
+presses_cell2 --> press2_out
+press1_out --> merger_node
+press2_out --> merger_node
+merger_node --> post_press12_buffer
+post_press12_buffer --> quality_station
+quality_station --> sink_node
+quality_station -->|defect| defects_node

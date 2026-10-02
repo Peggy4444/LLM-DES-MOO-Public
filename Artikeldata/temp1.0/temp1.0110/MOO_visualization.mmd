@@ -1,0 +1,47 @@
+flowchart TD
+UserInputs["**Input Variables**<br/>Buffer capacities for all buffers
+Discrete values {1-10}"]
+Objectives["**MOO Objectives**<br/>Minimize WIP
+Maximize Throughput"]
+MainScript["**Main Script**<br/>Entrypoint run in __main__
+Calls Optimization Controller and Exporter"]
+OptimizationController["**Optimization Controller**<br/>Orchestrates MOO run
+Method run_nsga2_optimization pop_size n_gen n_replications base_seed n_cores"]
+BufferCapacityProblem["**Buffer Capacity Problem**<br/>Class BufferCapacityProblem
+Attributes n_var n_obj xl xu n_replications base_seed n_cores
+Method _evaluate receives population X and returns objective matrix F"]
+ParallelExecutor["**Parallel Executor**<br/>Uses multiprocessing Pool
+Spawns evaluation tasks across n_cores"]
+EvaluateWorker["**Evaluation Worker**<br/>Function evaluate_single_individual
+Inputs candidate capacities caps seed n_replications
+Calls run_simulation_moo and aggregates reps"]
+RunSimulationMOO["**Simulation Runner**<br/>Function run_simulation_moo seed caps warmup measure_until
+Builds simulation with given buffer capacities
+Returns metrics overall throughput and wip and machine energy"]
+SimulationEngine["**Simulation Engine**<br/>Components of the production model
+Method run_simulation (original) and used by run_simulation_moo"]
+MachineClass["**Machine Class**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity
+Methods run breakdown cycle waiting_energy_consumption working_energy_consumption reset"]
+DelayBufferClass["**Delay Buffer Class**<br/>Attributes cap delay store tokens in_transit
+Methods put get free_capacity in_transit_count"]
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>Config sampling crossover mutation
+Operates on Problem instance and population
+Returns Pareto front and history"]
+ResultsExporter["**Results Exporter**<br/>Function export_history_to_csv
+Inputs result history filename
+Writes generation records including capacities wip throughput to CSV"]
+UserInputs --> OptimizationController
+Objectives --> OptimizationController
+MainScript --> OptimizationController
+OptimizationController --> BufferCapacityProblem
+BufferCapacityProblem --> ParallelExecutor
+ParallelExecutor --> EvaluateWorker
+EvaluateWorker --> RunSimulationMOO
+RunSimulationMOO --> SimulationEngine
+SimulationEngine --> MachineClass
+SimulationEngine --> DelayBufferClass
+EvaluateWorker --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2Algorithm
+NSGA2Algorithm --> OptimizationController
+OptimizationController --> ResultsExporter
+MainScript --> ResultsExporter

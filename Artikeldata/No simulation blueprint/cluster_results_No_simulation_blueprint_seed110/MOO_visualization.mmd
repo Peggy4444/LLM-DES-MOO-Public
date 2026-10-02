@@ -1,0 +1,25 @@
+flowchart TD
+DecisionVars["**Decision Variables**<br/>Six buffer capacities<br/>Each integer in {1-10}<br/>Sum capacities less or equal 30"]
+Objectives["**Objectives**<br/>f1 average WIP minimize<br/>f2 throughput maximize implemented as negated objective"]
+NSGA2Runner["**NSGA2 Runner**<br/>Attributes pop_size n_gen sampling crossover mutation algorithm<br/>Methods run_nsga2_optimization"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods _evaluate elementwise evaluation disabled"]
+ParallelPool["**Parallel Pool**<br/>Multiprocessing Pool spawn processes<br/>Distributes simulation tasks across cores"]
+Evaluator["**Evaluator**<br/>Functions evaluate_single_individual run_simulation_for_caps<br/>Handles seeds replications and penalization for infeasible solutions"]
+Simulation["**Production Simulation**<br/>Function production_line_run orchestrates env and processes<br/>Returns throughput mean WIP and energy per part metrics"]
+Machine["**Machine Class**<br/>Attributes name mean_time availability mttr energy_idle energy_work calendar_event resource energy last_state_change idle up<br/>Methods breakdown_process add_energy set_state process_part _mtbf"]
+BufferClass["**Buffer Class**<br/>Attributes name capacity process_time calendar_event store<br/>Methods put get with calendar aware processing"]
+Exporter["**Exporter**<br/>Function export_history_to_csv<br/>Writes feasible solutions from every generation to CSV results file"]
+
+DecisionVars --> BufferProblem
+Objectives --> BufferProblem
+NSGA2Runner --> BufferProblem
+BufferProblem --> ParallelPool
+ParallelPool --> Evaluator
+Evaluator --> Simulation
+Simulation --> Machine
+Simulation --> BufferClass
+Simulation --> Evaluator
+Evaluator --> BufferProblem
+BufferProblem --> NSGA2Runner
+NSGA2Runner --> Exporter
+Exporter --> NSGA2Runner

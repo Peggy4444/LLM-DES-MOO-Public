@@ -1,0 +1,43 @@
+flowchart TD
+SimulationModel["**Simulation Model**<br/>
+Attributes  delay_buffers  machines_list  sink  defects<br/>
+Methods  run_simulation seed warmup measure_until  run_simulation_with_caps seed caps warmup measure_until"]
+DelayBufferClass["**DelayBuffer**<br/>
+Attributes  cap  delay  store  tokens  _in_transit<br/>
+Methods  put  get  free_capacity  in_transit_count"]
+MachineClass["**Machine**<br/>
+Attributes  name  process_time  availability  mttr  working_power  waiting_power  capacity  is_up  active_count  stats<br/>
+Methods  run  _breakdown_cycle  waiting_energy_consumption  working_energy_consumption"]
+EvaluateWorkerFn["**Evaluate Worker**<br/>
+Function  evaluate_single_individual inputs x n_replications base_seed warmup measure_until<br/>
+Outputs  avg_wip  negative_throughput"]
+BufferCapacityProblemClass["**BufferCapacityProblem**<br/>
+Subclass of Problem<br/>
+Attributes  n_var  n_obj  xl  xu  n_replications  base_seed  n_cores<br/>
+Methods  _evaluate X out uses multiprocessing pool to run Evaluate Worker in parallel"]
+NSGA2OptimizerClass["**NSGA2 Optimizer**<br/>
+Function  run_nsga2_optimization<br/>
+Attributes  pop_size  n_gen  sampling  crossover  mutation  termination  algorithm<br/>
+Output  optimization result history"]
+ResultExporterClass["**Result Exporter**<br/>
+Function  export_history_to_csv<br/>
+Writes csv to results directory with generation individual capacities wip throughput"]
+MainScript["**Main Script**<br/>
+Sets multiprocessing start method spawn<br/>
+Calls NSGA2 optimizer then calls result exporter"]
+InputVars["**Input Variables**<br/>
+Six buffer capacities discrete integers range {1-10}"]
+OutputObjs["**Objectives**<br/>
+Minimize WIP  Maximize throughput implemented as negative throughput objective"]
+
+MainScript -->|runs| NSGA2OptimizerClass
+NSGA2OptimizerClass -->|creates and uses| BufferCapacityProblemClass
+InputVars -->|defines variable bounds| BufferCapacityProblemClass
+BufferCapacityProblemClass -->|spawns parallel tasks| EvaluateWorkerFn
+EvaluateWorkerFn -->|calls simulation with caps| SimulationModel
+SimulationModel -->|instantiates| DelayBufferClass
+SimulationModel -->|instantiates| MachineClass
+MachineClass -->|uses buffers| DelayBufferClass
+EvaluateWorkerFn -->|returns objectives| OutputObjs
+NSGA2OptimizerClass -->|produces result history| ResultExporterClass
+MainScript -->|passes result to| ResultExporterClass

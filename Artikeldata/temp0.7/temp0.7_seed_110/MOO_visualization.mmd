@@ -1,0 +1,34 @@
+flowchart TD
+SimulationModel["**Simulation Model**<br/>Simulation code base including simpy environment and part generator"]
+Machine["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>State working_time failed_time_total wait_input_time blocked_time active_count processed_count window_wait_time is_up<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+DelayBuffer["**DelayBuffer**<br/>Attributes cap delay store tokens in_transit<br/>Methods put delayed_put get get_and_release free_capacity in_transit_count"]
+RunSim["**run simulation**<br/>Core simpy model builds machines buffers samples wip measures throughput and energy"]
+RunSimWithCaps["**run simulation with caps**<br/>Inputs seed caps for six buffers<br/>Creates DelayBuffer instances with given caps<br/>Runs simulation and returns result dict overall and machine_energy"]
+EvalIndividual["**evaluate single individual**<br/>Convert individual genes to six integer caps<br/>Run multiple replications using run simulation with caps<br/>Aggregate avg_wip and avg_throughput return objectives"]
+BufferProblem["**BufferCapacityProblem**<br/>n_var 6 n_obj 2 xl xu n_replications base_seed n_cores<br/>Method _evaluate maps population to parallel evaluations using multiprocessing pool"]
+MultiPool["**Multiprocessing Pool**<br/>Parallel execution of evaluate single individual tasks<br/>Maps tasks to worker processes and returns objective vectors"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>Population selection sampling crossover mutation<br/>Evolves population using objective values from problem"]
+RunNSGA2["**run nsga2 optimization**<br/>Create BufferCapacityProblem with bounds per buffer {1-10}<br/>Configure sampling crossover mutation termination and call minimize<br/>Return optimization result with history"]
+ExportCSV["**export history to csv**<br/>Iterate result history extract generation individuals caps wip throughput<br/>Write rows to results csv file"]
+Inputs["**Input Variables**<br/>Six buffer capacities cap_post_loading cap_post_conveyor cap_post_washing cap_pre_press1 cap_pre_press2 cap_post_press12<br/>Discrete range {1-10}"]
+Objectives["**Objectives**<br/>Minimize wip<br/>Maximize throughput implemented as minimize negative throughput"]
+Outputs["**Output Variables**<br/>wip throughput measured per individual"]
+
+Inputs --> RunNSGA2
+RunNSGA2 --> BufferProblem
+RunNSGA2 --> NSGA2Algo
+BufferProblem --> MultiPool
+MultiPool --> EvalIndividual
+EvalIndividual --> RunSimWithCaps
+RunSimWithCaps --> RunSim
+RunSim --> Machine
+RunSim --> DelayBuffer
+MultiPool --> BufferProblem
+BufferProblem --> NSGA2Algo
+NSGA2Algo --> RunNSGA2
+EvalIndividual --> Objectives
+RunNSGA2 --> ExportCSV
+RunNSGA2 --> Outputs
+SimulationModel --> RunSim
+Machine --> SimulationModel
+DelayBuffer --> SimulationModel

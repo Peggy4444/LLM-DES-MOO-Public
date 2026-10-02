@@ -1,0 +1,41 @@
+flowchart TD
+MOOController["**MOO Controller**<br/>Starts optimization<br/>Configures NSGA2 parameters"]
+DecisionVector["**Decision Vector**<br/>6 buffer capacities<br/>Discrete values {1-10}"]
+BufferProblem["**BufferCapacityProblem**<br/>Defines problem for NSGA2<br/>Attributes n_replications base_seed n_cores<br/>Method _evaluate"]
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>Generates populations<br/>Applies selection and replacement"]
+GeneticOps["**Genetic Operators**<br/>Sampling IntegerRandomSampling<br/>Crossover SBX<br/>Mutation PM"]
+Population["**Population**<br/>Collection of candidate vectors<br/>Evolved each generation"]
+ParallelPool["**Parallel Worker Pool**<br/>multiprocessing pool with fixed cores<br/>Distributes evaluations"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual<br/>Manages multiple replications per candidate<br/>Returns [wip negative_throughput]"]
+SimulationRunner["**Simulation Runner**<br/>run_simulation_with_caps<br/>Builds factory topology with provided capacities<br/>Executes warmup and measurement runs"]
+DelayBuffer["**DelayBuffer Class**<br/>Attributes cap delay<br/>Methods put get in_transit_count free_capacity"]
+Machine["**Machine Class**<br/>Attributes process_time availability mttr working_power waiting_power capacity<br/>Methods run waiting_energy_consumption working_energy_consumption"]
+Measurement["**Measurement and KPIs**<br/>Collects throughput average WIP produced parts<br/>Collects per machine energy and times"]
+Objectives["**Objectives**<br/>Objective 1 minimize WIP<br/>Objective 2 maximize throughput stored as negative value"]
+History["**History Recorder**<br/>Saves population and evaluated objectives per generation"]
+CSVExport["**Export to CSV**<br/>Writes feasible solutions and KPIs to results file"]
+
+MOOController --> BufferProblem
+MOOController --> NSGA2Algorithm
+NSGA2Algorithm --> GeneticOps
+NSGA2Algorithm --> Population
+NSGA2Algorithm --> History
+
+Population --> ParallelPool
+DecisionVector --> Population
+
+ParallelPool --> Evaluator
+BufferProblem --> ParallelPool
+Evaluator --> SimulationRunner
+SimulationRunner --> DelayBuffer
+SimulationRunner --> Machine
+SimulationRunner --> Measurement
+
+DelayBuffer --> Machine
+Machine --> Measurement
+Measurement --> Evaluator
+Evaluator --> Objectives
+Objectives --> NSGA2Algorithm
+History --> CSVExport
+
+CSVExport --> MOOController

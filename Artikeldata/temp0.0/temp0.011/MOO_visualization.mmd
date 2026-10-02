@@ -1,0 +1,30 @@
+flowchart TD
+StartNode["**Start**<br/>Run MOO workflow for buffer capacities"]
+ProblemNode["**BufferCapacityProblem**<br/>Attributes: n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods: _evaluate receives population matrix X"]
+NSGA2Node["**NSGA2 Algorithm**<br/>Attributes: pop_size n_gen sampling crossover mutation<br/>Methods: run optimization loop minimize"]
+EvaluatePop["**Evaluate Population**<br/>Maps population to parallel evaluations using multiprocessing Pool"]
+EvalInd["**evaluate_single_individual**<br/>Inputs: capacity vector replications base_seed<br/>Method: run multiple simulation replications and aggregate metrics"]
+SimRun["**run_simulation_with_caps**<br/>Inputs: seed caps warmup measure_until<br/>Method: construct environment create buffers and machines run sim and collect metrics"]
+SimEnv["**Simulation Environment**<br/>Components: raw input delay buffers machines sink defects<br/>Processes: part generation splitting merging wip sampling"]
+DelayBuffer["**DelayBuffer**<br/>Attributes: cap delay store tokens in_transit<br/>Methods: put get free_capacity in_transit_count"]
+Machine["**Machine**<br/>Attributes: name input_buffer output_buffer process_time availability mttr working_power waiting_power defect_rate capacity<br/>Methods: run breakdown cycle waiting_energy_consumption working_energy_consumption"]
+Metrics["**Metrics Collector**<br/>Collects throughput wip produced_parts and per machine energy and times"]
+Objectives["**Objective Return**<br/>Compute objectives: avg_wip minimize and negative avg_throughput minimize"]
+HistoryExport["**export_history_to_csv**<br/>Inputs: optimization result history<br/>Produces CSV file in results directory"]
+EndNode["**End**<br/>Optimization complete results exported"]
+
+StartNode --> ProblemNode
+ProblemNode --> NSGA2Node
+NSGA2Node --> EvaluatePop
+EvaluatePop --> EvalInd
+EvalInd --> SimRun
+SimRun --> SimEnv
+SimRun --> DelayBuffer
+SimRun --> Machine
+SimEnv --> Metrics
+Metrics --> Objectives
+Objectives --> EvalInd
+EvalInd --> EvaluatePop
+EvaluatePop --> NSGA2Node
+NSGA2Node --> HistoryExport
+HistoryExport --> EndNode

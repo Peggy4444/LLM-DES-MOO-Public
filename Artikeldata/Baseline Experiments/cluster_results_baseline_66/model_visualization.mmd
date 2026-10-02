@@ -1,0 +1,57 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+raw_input["**Raw input**\ncapacity=1000"]:::store
+loading_robot["**Loading robot**\nPT=12s\nAV=90.49%"]:::machine
+post_loading_buffer["**Post loading\nbuffer**\ncap=2 delay=10s"]:::buffer
+conveyor_belt["**Conveyor belt**\nPT=6s\nAV=100%"]:::machine
+post_conveyor_buffer["**Post conveyor\nbuffer**\ncap=2 delay=10s"]:::buffer
+washing_machine["**Washing machine**\nPT=14s\nAV=80.89%"]:::machine
+post_washing_buffer["**Post washing\nbuffer**\ncap=2 delay=10s"]:::buffer
+hantering_cell["**Hantering cell**\nPT=25s\nAV=97.79%"]:::machine
+
+pre_press1_store["**Pre-press\nstore (out)**\ncap=3"]:::store
+splitter1["**Splitter\nhantering->presses**\nround-robin"]:::helper
+
+pre_press1_buffer["**Pre-press1\nbuffer**\ncap=3 delay=32s"]:::buffer
+pre_press2_buffer["**Pre-press2\nbuffer**\ncap=3 delay=32s"]:::buffer
+
+presses_cell1["**Presses cell 1**\nPT=175s\nAV=87.79%"]:::machine
+presses_cell2["**Presses cell 2**\nPT=176s\nAV=87.69%"]:::machine
+
+press1_out["**Press1\noutput**\ncap=3"]:::store
+press2_out["**Press2\noutput**\ncap=3"]:::store
+
+merger1["**Merger\npress outputs**"]:::helper
+post_press12_buffer["**Post Press1&2\nbuffer**\ncap=3 delay=32s"]:::buffer
+
+quality_station["**Quality station\ncell**\nPT=41s\nAV=85.87%\ndefect=8.9%"]:::machine
+finished_sink["**Finished\nGoods\nSink**\nlarge capacity"]:::sink
+defects_sink["**Defects\nSink**\nscrap"]:::defect
+
+raw_input --> loading_robot
+loading_robot --> post_loading_buffer
+post_loading_buffer --> conveyor_belt
+conveyor_belt --> post_conveyor_buffer
+post_conveyor_buffer --> washing_machine
+washing_machine --> post_washing_buffer
+post_washing_buffer --> hantering_cell
+hantering_cell --> pre_press1_store
+pre_press1_store --> splitter1
+splitter1 -->|toggle| pre_press1_buffer
+splitter1 -->|toggle| pre_press2_buffer
+pre_press1_buffer --> presses_cell1
+pre_press2_buffer --> presses_cell2
+presses_cell1 --> press1_out
+presses_cell2 --> press2_out
+press1_out --> merger1
+press2_out --> merger1
+merger1 --> post_press12_buffer
+post_press12_buffer --> quality_station
+quality_station --> finished_sink
+quality_station --> defects_sink

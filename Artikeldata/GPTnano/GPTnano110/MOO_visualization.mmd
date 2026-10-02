@@ -1,0 +1,34 @@
+flowchart TD
+start["**Start** 
+Initiate MOO optimization for three buffers to minimize WIP and maximize Throughput 
+Buffer capacities for MOO: Buffer1, Buffer2, Buffer3 each in {1-10}."]
+buffer_problem["**BufferCapacityProblem** 
+Represents the MOO problem with 3 decision vars: buffer1_cap buffer2_cap buffer3_cap 
+Each cap is in {1-10}. Objectives: WIP minimize; Throughput maximize (as -Throughput)."]
+population_eval["**PopulationEvaluation** 
+Distributes evaluation across CPU cores using multiprocessing 
+Collects F matrix of [WIP, -Throughput]."]
+eval_single["**evaluate_single_individual** 
+Evaluates one candidate by running multiple replications and averaging WIP and Throughput."]
+run_sim["**run_simulation** 
+Executes the production system model for a given seed and capacities to obtain WIP and Throughput."]
+nsga2_engine["**NSGA-II Engine** 
+Configures sampling SBX crossover and PM mutation 
+Runs NSGA-II over generations."]
+opt_loop["**Optimization Loop** 
+Generates new populations, applies selection, crossover, mutation, and replacement until termination."]
+export_results["**Export History** 
+Writes feasible solutions with buffer capacities and KPIs to CSV for review."]
+end_node["**End** 
+Optimization complete; Pareto front available for decision making."]
+
+start --> buffer_problem
+buffer_problem --> population_eval
+population_eval --> eval_single
+eval_single --> run_sim
+run_sim --> eval_single
+eval_single --> population_eval
+population_eval --> nsga2_engine
+nsga2_engine --> opt_loop
+opt_loop --> export_results
+export_results --> end_node

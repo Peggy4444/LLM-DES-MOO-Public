@@ -1,0 +1,91 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+raw_input["**Raw input**
+Store
+Cap=1000"]:::store
+loading_robot["**Loading robot**
+CT=12s
+Avail=90.49%"]:::machine
+post_loading_buffer["**Post loading**
+Delay=10s
+Cap=2"]:::buffer
+conveyor_belt["**Conveyor belt**
+CT=6s
+Avail=100%"]:::machine
+post_conveyor_buffer["**Post conveyor**
+Delay=10s
+Cap=2"]:::buffer
+washing_machine["**Washing machine**
+CT=14s
+Avail=80.89%"]:::machine
+post_washing_buffer["**Post washing**
+Delay=10s
+Cap=2"]:::buffer
+hantering_cell["**Hantering cell**
+CT=25s
+Avail=97.79%"]:::machine
+pre_press_split["**Pre-press**
+Helper buffer
+Cap=6"]:::buffer
+splitter_helper["**Splitter**
+Round-robin
+Respects downstream capacity"]:::helper
+pre_press1_buffer["**Pre press 1**
+Delay=32s
+Cap=3"]:::buffer
+pre_press2_buffer["**Pre press 2**
+Delay=32s
+Cap=3"]:::buffer
+presses_cell_1["**Presses cell 1**
+CT=175s
+Avail=87.79%"]:::machine
+presses_cell_2["**Presses cell 2**
+CT=176s
+Avail=87.69%"]:::machine
+press1_out["**Press 1 out**
+Store
+Cap=3"]:::buffer
+press2_out["**Press 2 out**
+Store
+Cap=3"]:::buffer
+merger_helper["**Merger**
+Merges press outputs"]:::helper
+post_press12_buffer["**Post press 12**
+Delay=32s
+Cap=3"]:::buffer
+quality_station["**Quality station cell**
+CT=41s
+Avail=85.87%
+Defect=8.9%"]:::machine
+finished_sink["**Finished goods**
+Sink"]:::sink
+defects_sink["**Defects**
+Scrap sink"]:::defect
+
+raw_input --> loading_robot
+loading_robot --> post_loading_buffer
+post_loading_buffer --> conveyor_belt
+conveyor_belt --> post_conveyor_buffer
+post_conveyor_buffer --> washing_machine
+washing_machine --> post_washing_buffer
+post_washing_buffer --> hantering_cell
+hantering_cell --> pre_press_split
+pre_press_split --> splitter_helper
+splitter_helper --> pre_press1_buffer
+splitter_helper --> pre_press2_buffer
+pre_press1_buffer --> presses_cell_1
+pre_press2_buffer --> presses_cell_2
+presses_cell_1 --> press1_out
+presses_cell_2 --> press2_out
+press1_out --> merger_helper
+press2_out --> merger_helper
+merger_helper --> post_press12_buffer
+post_press12_buffer --> quality_station
+quality_station -->|defect 8.9%| defects_sink
+quality_station --> finished_sink

@@ -1,0 +1,76 @@
+flowchart TD
+DecisionVars["**Decision Variables**<br/>
+Six buffer capacities x0 x1 x2 x3 x4 x5
+Discrete range {1-10} each"]
+
+Objectives["**Objectives**<br/>
+f1 average WIP minimize
+f2 throughput maximize returned as negative for minimization"]
+
+BufferProblem["**BufferCapacityProblem Class**<br/>
+Attributes n_var n_obj xl xu n_replications base_seed n_cores
+Method _evaluate receives population matrix X
+Sets out F with objective arrays"]
+
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>
+Config sampling crossover mutation pop_size n_gen
+Method run minimize interacts with problem via _evaluate"]
+
+GeneticOperators["**Genetic Operators**<br/>
+Sampling IntegerRandomSampling
+Crossover SBX with prob 0.9 eta 15
+Mutation PM with prob 1 over n_var eta 20"]
+
+MultiprocessPool["**Multiprocessing Pool**<br/>
+Spawns worker processes for parallel evaluation
+Uses n_cores workers"]
+
+EvaluateIndividual["**evaluate_single_individual Function**<br/>
+Inputs one design x n_replications base_seed warmup measure_until
+Runs multiple replications
+Returns objectives [avg_wip negative_avg_throughput]"]
+
+RunSimWithCaps["**run_simulation_with_caps Function**<br/>
+Builds simpy Environment with provided caps
+Creates DelayBuffer and Machine instances
+Runs warmup resets samples and measures throughput and wip
+Returns result metrics per replication"]
+
+RunSim["**run_simulation Function**<br/>
+Base simulation builder without external caps
+Common simulation logic used by run with caps
+Produces throughput and wip metrics"] 
+
+SimEnvComponents["**Simulation Components**<br/>
+part_generator splitter merger sampler sinks
+Records produced parts wip samples"] 
+
+MachineClass["**Machine Class**<br/>
+Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity is_up working_time failed_time processed_count active_count last_reset repair_event
+Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption reset_stats"] 
+
+DelayBufferClass["**DelayBuffer Class**<br/>
+Attributes cap delay store tokens _in_transit
+Methods put get in_transit_count free_capacity"] 
+
+ResultExporter["**export_history_to_csv Function**<br/>
+Receives optimization history result
+Writes generations individuals capacities wip throughput to CSV file"] 
+
+DecisionVars --> BufferProblem
+Objectives --> BufferProblem
+NSGA2Algorithm --> BufferProblem
+NSGA2Algorithm --> GeneticOperators
+BufferProblem --> MultiprocessPool
+MultiprocessPool --> EvaluateIndividual
+EvaluateIndividual --> RunSimWithCaps
+RunSimWithCaps --> RunSim
+RunSim --> SimEnvComponents
+RunSim --> MachineClass
+RunSim --> DelayBufferClass
+SimEnvComponents --> MachineClass
+MachineClass --> RunSim
+DelayBufferClass --> RunSim
+EvaluateIndividual --> BufferProblem
+NSGA2Algorithm --> ResultExporter
+BufferProblem --- ResultExporter

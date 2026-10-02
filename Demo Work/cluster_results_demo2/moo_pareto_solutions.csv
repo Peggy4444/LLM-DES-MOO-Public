@@ -1,0 +1,9 @@
+generation_index,individual_index,loading_robot_process_time_reduction10percent_flag,conveyor_belt_process_time_reduction10percent_flag,washing_machine_process_time_reduction10percent_flag,hantering_cell_process_time_reduction10percent_flag,presses_cell1_process_time_reduction10percent_flag,presses_cell2_process_time_reduction10percent_flag,quality_station_cell_process_time_reduction10percent_flag,wip,energy consumption per part
+0,0,1,0,1,1,1,1,1,18.04950396825397,0.4072844421950821
+5,5,1,0,1,1,1,0,1,18.03273809523809,0.4211484499217874
+16,8,1,0,1,1,1,0,1,17.92281746031746,0.4235018199938524
+19,9,1,0,1,1,1,1,0,18.176984126984127,0.4059768338171698
+20,8,0,0,1,1,1,1,0,18.063194444444445,0.406579893735407
+22,8,0,0,1,1,1,1,0,18.187599206349205,0.4059638808568938
+22,9,1,0,1,1,1,1,0,18.2375,0.4056476859047841
+26,7,1,0,1,1,1,0,1,17.95357142857143,0.4218151809009129

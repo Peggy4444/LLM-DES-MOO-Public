@@ -1,0 +1,111 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+Generator["**Generator**
+Interarrival=60s
+Respects weekly downtime"]:::helper
+raw_buffer["**Raw_Buffer**
+Capacity=1000
+Source store"]:::store
+
+loading["**Loading_robot**
+MT=12s
+Avail=0.9049
+MTTR=68s
+E_idle=0.25kW
+E_work=0.72kW"]:::machine
+post_loading_buf["**PostLoadingBuffer**
+Cap=2
+Proc=10s"]:::buffer
+
+conveyor["**Conveyor_belt**
+MT=6s
+Avail=1.0
+MTTR=1s"]:::machine
+post_conveyor_buf["**PostConveyorBuffer**
+Cap=2
+Proc=10s"]:::buffer
+
+washing["**Washing_machine**
+MT=14s
+Avail=0.8089
+MTTR=269s
+E_idle=4.28kW
+E_work=35.24kW"]:::machine
+post_washing_buf["**PostWashingBuffer**
+Cap=2
+Proc=10s"]:::buffer
+
+hantering["**Hantering_cell**
+MT=25s
+Avail=0.9779
+MTTR=74s
+E_idle=0.50kW
+E_work=0.74kW"]:::machine
+
+splitter["**Splitter**
+Rule=even id%2 -> Press1
+odd id%2 -> Press2"]:::helper
+
+pre_press1_buf["**PrePress1Buffer**
+Cap=3
+Proc=32s"]:::buffer
+press1["**Presses_cell_1**
+MT=175s
+Avail=0.8779
+MTTR=73s
+E_idle=1.25kW
+E_work=1.28kW"]:::machine
+
+pre_press2_buf["**PrePress2Buffer**
+Cap=3
+Proc=32s"]:::buffer
+press2["**Presses_cell_2**
+MT=176s
+Avail=0.8769
+MTTR=74s
+E_idle=1.25kW
+E_work=1.27kW"]:::machine
+
+post_press12_buf["**PostPress1&Press2Buffer**
+Cap=3
+Proc=32s"]:::buffer
+quality["**Quality_station_cell**
+MT=41s
+Avail=0.8587
+MTTR=66s
+E_idle=0.58kW
+E_work=0.84kW"]:::machine
+
+defect_sink["**Defect_Sink**
+Rejects defective parts
+Reported rate~8.9%"]:::defect
+final_sink["**Finished_Goods**
+Final sink / finished store"]:::sink
+
+Generator --> raw_buffer
+raw_buffer --> loading
+loading --> post_loading_buf
+post_loading_buf --> conveyor
+conveyor --> post_conveyor_buf
+post_conveyor_buf --> washing
+washing --> post_washing_buf
+post_washing_buf --> hantering
+hantering --> splitter
+
+splitter --> pre_press1_buf
+pre_press1_buf --> press1
+splitter --> pre_press2_buf
+pre_press2_buf --> press2
+
+press1 --> post_press12_buf
+press2 --> post_press12_buf
+post_press12_buf --> quality
+
+quality -->|p=8.9%| defect_sink
+quality -->|p=91.1%| final_sink

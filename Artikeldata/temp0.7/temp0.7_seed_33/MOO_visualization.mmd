@@ -1,0 +1,40 @@
+flowchart TD
+Start["**Start**<br/>Initialize MOO optimization run"] 
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>Config pop_size n_gen sampling crossover mutation<br/>Runs evolutionary loop"] 
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Decision variables buffer capacities {1-10}<br/>Methods _evaluate"] 
+PopulationGen["**Population Generation**<br/>Sampling IntegerRandomSampling<br/>Crossover SBX Mutation PM"] 
+EvaluatePop["_BufferCapacityProblem._evaluate_"]["**BufferCapacityProblem _evaluate_<br/>Receives population X<br/>Creates evaluation tasks<br/>Uses multiprocessing pool to map tasks<br/>Collects objectives into F"] 
+Multipool["**Multiprocessing Pool**<br/>Role parallel evaluation of individuals<br/>Config processes equal n_cores"] 
+EvaluateSingle["**evaluate_single_individual**<br/>Inputs caps n_replications base_seed warmup measure_until<br/>For each replication call run_simulation_with_caps<br/>Aggregates average wip and throughput<br/>Returns objectives [wip negative_throughput]"] 
+RunSimWithCaps["**run_simulation_with_caps**<br/>Inputs seed caps warmup measure_until<br/>Builds simulation model with decision variable capacities<br/>Runs warmup and measurement<br/>Computes KPIs throughput wip machine energy<br/>Returns result dict"] 
+DelayBufferClass["**DelayBuffer**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get free_capacity in_transit_count"] 
+MachineClass["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity is_up active_count working_time blocked_time failed_time_total<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption reset_machine_stats"] 
+SimulatorComponents["**Simulator Components**<br/>part_generator splitter merger helper stores sink defects<br/>Sampling wip process every 600 seconds"] 
+ResultCollector["**Result Collector**<br/>Collects objective vectors from pool.map<br/>Returns numpy array F to NSGA2"] 
+SelectionReplacement["**Selection and Replacement**<br/>NSGA2 non dominated sorting crowding distance selection<br/>Generates next generation"] 
+Termination["**Termination**<br/>Stop when n_gen generations reached"] 
+ResultStore["**Final Result**<br/>Pareto front population and history object"] 
+ExportCSV["**export_history_to_csv**<br/>Inputs result filename<br/>Writes CSV rows per generation with decision variables and KPIs"] 
+End["**End**<br/>Export complete optimization artifacts"]
+
+Start --> NSGA2Algorithm
+NSGA2Algorithm --> PopulationGen
+PopulationGen --> BufferCapacityProblem
+NSGA2Algorithm --> BufferCapacityProblem
+BufferCapacityProblem --> EvaluatePop
+EvaluatePop --> Multipool
+Multipool --> EvaluateSingle
+EvaluateSingle --> RunSimWithCaps
+RunSimWithCaps --> DelayBufferClass
+RunSimWithCaps --> MachineClass
+RunSimWithCaps --> SimulatorComponents
+RunSimWithCaps --> EvaluateSingle
+EvaluateSingle --> ResultCollector
+ResultCollector --> EvaluatePop
+EvaluatePop --> NSGA2Algorithm
+NSGA2Algorithm --> SelectionReplacement
+SelectionReplacement --> PopulationGen
+SelectionReplacement --> Termination
+Termination --> ResultStore
+ResultStore --> ExportCSV
+ExportCSV --> End

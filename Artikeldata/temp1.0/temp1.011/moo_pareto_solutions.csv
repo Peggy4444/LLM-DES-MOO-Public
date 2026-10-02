@@ -1,0 +1,5 @@
+generation_index,individual_index,cap_post_loading_buffer,cap_post_conveyor_buffer,cap_post_washing_buffer,cap_pre_press1_buffer,cap_pre_press2_buffer,cap_post_press12_buffer,wip,throughput
+5,1,6,6,5,1,1,10,34.89365079365079,1.4821428571428572
+6,6,6,4,1,1,1,3,22.04484126984127,1.4785714285714286
+7,4,3,4,1,1,1,2,18.279166666666665,1.4678571428571427
+7,5,1,1,1,1,1,1,12.332936507936507,1.4535714285714283

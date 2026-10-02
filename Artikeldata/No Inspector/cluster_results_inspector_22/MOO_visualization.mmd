@@ -1,0 +1,143 @@
+flowchart TD
+BufferCapacityProblem["**BufferCapacityProblem**
+Attributes
+- n_var {6}
+- n_obj {2}
+- xl {1-10}
+- xu {1-10}
+- n_replications
+- base_seed
+- n_cores
+Methods
+- _evaluate X batch evaluation using multiprocessing pool"] 
+
+NSGA2Algorithm["**NSGA2 Algorithm**
+Attributes
+- pop_size
+- sampling IntegerRandomSampling
+- crossover SBX
+- mutation PM
+- eliminate_duplicates
+Methods
+- run optimization via minimize"] 
+
+RunNSGA2["**run_nsga2_optimization**
+Description
+- Construct BufferCapacityProblem
+- Configure NSGA2 Algorithm
+- Call minimize to run optimization
+- Return result with history"] 
+
+MultiprocessingPool["**Multiprocessing Pool**
+Attributes
+- processes equal to n_cores
+Methods
+- map evaluate tasks in parallel"] 
+
+EvaluateIndividual["**evaluate_single_individual**
+Attributes
+- x vector candidate capacities
+- n_replications
+- base_seed
+Methods
+- repeat simulations across replications
+- aggregate avg_wip and avg_throughput
+Returns
+- objective vector [avg_wip, negative avg_throughput]"] 
+
+RunSimWithCaps["**run_simulation_with_caps**
+Attributes
+- caps 6 integers {1-10}
+- simulation parameters warmup measure_until
+Returns
+- result dict containing overall throughput wip produced_parts and machine_energy
+Description
+- Build DelayBuffer instances with given caps
+- Instantiate Machine objects
+- Run simpy simulation and sample wip and throughput"] 
+
+DelayBufferClass["**DelayBuffer**
+Attributes
+- cap
+- delay
+- store
+- tokens
+- in_transit counter
+Methods
+- put part delayed put
+- get part and release token
+- in_transit_count
+- free_capacity"] 
+
+MachineClass["**Machine**
+Attributes
+- name
+- input_buffer
+- output_buffer
+- process_time
+- availability
+- mttr
+- working_power
+- waiting_power
+- capacity
+- resource
+- worker_processes
+- stats working_time failed_time_total wait_input_time blocked_time processed_count
+Methods
+- run process lifecycle
+- _breakdown_cycle failure and repair
+- waiting_energy_consumption
+- working_energy_consumption"] 
+
+InputCapacities["**Input Variables**
+Description
+- All buffer capacities
+- 6 discrete values each in {1-10}"] 
+
+Objectives["**MOO Objectives**
+Description
+- Minimize wip
+- Maximize throughput"] 
+
+ExportHistory["**export_history_to_csv**
+Description
+- Read result.history from optimizer
+- Write CSV with generation individual caps wip throughput"] 
+
+SimulationOutputs["**Simulation Outputs**
+Description
+- overall throughput
+- overall wip
+- produced_parts
+- machine_energy per machine"] 
+
+%% Flow relations illustrating interaction between components
+RunNSGA2 --> NSGA2Algorithm
+RunNSGA2 --> BufferCapacityProblem
+NSGA2Algorithm --> BufferCapacityProblem
+BufferCapacityProblem --> MultiprocessingPool
+MultiprocessingPool --> EvaluateIndividual
+EvaluateIndividual --> RunSimWithCaps
+RunSimWithCaps --> DelayBufferClass
+RunSimWithCaps --> MachineClass
+RunSimWithCaps --> SimulationOutputs
+EvaluateIndividual --> SimulationOutputs
+BufferCapacityProblem --> Objectives
+RunNSGA2 --> ExportHistory
+ExportHistory --> SimulationOutputs
+
+%% Data flow from inputs to simulations
+InputCapacities --> BufferCapacityProblem
+InputCapacities --> RunSimWithCaps
+
+%% Objective feedback loop
+SimulationOutputs --> EvaluateIndividual
+EvaluateIndividual --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2Algorithm
+NSGA2Algorithm --> RunNSGA2
+
+%% Notes on parallelism and aggregation
+MultiprocessingPool -. parallel map .-> EvaluateIndividual
+EvaluateIndividual -. aggregates across replications .-> BufferCapacityProblem
+
+%% End of diagram

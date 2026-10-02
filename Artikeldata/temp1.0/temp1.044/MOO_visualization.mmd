@@ -1,0 +1,36 @@
+flowchart TD
+MOO_Controller["**MOO Controller**<br/>Orchestrates NSGA2 search<br/>method run_nsga2_optimization"]
+Problem_BufferCapacityProblem["**BufferCapacityProblem**<br/>Decision variables count 6<br/>Decision domain values {1-10}<br/>Objectives 2 f1 f2<br/>attributes n_replications base_seed n_cores<br/>method _evaluate X uses multiprocessing"]
+Decision_Variables["**Decision Variables**<br/>Buffer capacities per buffer<br/>Values {1-10} for six buffers"]
+Multiprocessing_Pool["**Multiprocessing Pool**<br/>Parallel evaluation of individuals<br/>Uses n_cores worker processes"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual<br/>Runs R replications and aggregates KPIs<br/>Returns objectives avg_wip and negative throughput"]
+Simulation_Runner["**Simulation Runner**<br/>run_simulation_with_caps seed caps<br/>Builds simulation network<br/>Returns result with throughput and wip"]
+DelayBuffer_Class["**DelayBuffer**<br/>Attributes cap delay tokens in_transit<br/>Methods put get free_capacity in_transit_count"]
+Machine_Class["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power defect_rate capacity<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+Simulation_Components["**Simulation Components**<br/>part generator splitter merger sample wip<br/>measures throughput and average WIP"]
+Objectives["**Objectives**<br/>Minimize average WIP<br/>Maximize throughput encoded as minimize negative throughput"]
+Result_Collector["**Result Collector**<br/>Collects F matrix from problem evaluation<br/>Returns population and history"]
+Exporter["**Result Exporter**<br/>export_history_to_csv result<br/>Writes generation by generation KPIs and decisions to CSV"]
+
+MOO_Controller --> Problem_BufferCapacityProblem
+Decision_Variables --> Problem_BufferCapacityProblem
+
+Problem_BufferCapacityProblem --> Multiprocessing_Pool
+Multiprocessing_Pool --> Evaluator
+Evaluator --> Simulation_Runner
+Simulation_Runner --> Simulation_Components
+Simulation_Runner --> DelayBuffer_Class
+Simulation_Runner --> Machine_Class
+
+Simulation_Components --> DelayBuffer_Class
+Simulation_Components --> Machine_Class
+
+Evaluator --> Result_Collector
+Multiprocessing_Pool --> Result_Collector
+Problem_BufferCapacityProblem --> Result_Collector
+
+Result_Collector --> MOO_Controller
+MOO_Controller --> Objectives
+MOO_Controller --> Exporter
+
+Exporter --> Result_Collector

@@ -1,0 +1,101 @@
+flowchart TD
+NSGA2["**NSGA2**
+attributes
+POP_SIZE {50}
+N_GEN {100}
+RANDOM_SEED_MOO 1234
+methods
+run
+evolve"] 
+Population["**Population**
+attributes
+members list of Individual
+size POP_SIZE
+methods
+create_initial
+replace_population
+collect_pareto"] 
+Individual["**Individual**
+attributes
+vars capacities for buffers {1-10}
+objs wip and throughput
+feasible flag
+methods
+decode_vars"] 
+GeneticOperators["**Genetic Operators**
+methods
+tournament_selection
+crossover
+mutate
+dominates
+fast_non_dominated_sort
+crowding_distance_assignment"] 
+Evaluator["**Evaluator**
+attributes
+REPLICATIONS {10}
+WARMUP_SECONDS {86400}
+MEASURE_UNTIL {691200}
+methods
+evaluate_population
+decode_and_run
+store_solution_to_all_solutions"] 
+ProcessPool["**Process Pool**
+attributes
+N_CORES {50}
+methods
+map_tasks"] 
+SimulationRunner["**Simulation Runner**
+methods
+run_simulation
+part_generator
+sample_wip
+reset_machine_stats
+return_results"] 
+SimulationModel["**Simulation Model**
+attributes
+buffer_caps mapping for 10 buffers
+machines list
+delay_buffers list
+sinks and defects
+outputs throughput wip machine_energy
+methods
+build_model
+run_until"] 
+Machine["**Machine**
+attributes
+name process_time availability mttr working_power waiting_power capacity
+state is_up active_count processed_count working_time blocked_time failed_time_total
+methods
+run
+breakdown_cycle
+waiting_energy_consumption
+working_energy_consumption"] 
+DelayBuffer["**Delay Buffer**
+attributes
+cap delay tokens store in_transit
+methods
+put
+get
+free_capacity
+in_transit_count"] 
+ResultsSaver["**Results Saver**
+methods
+save_results
+write_csv"] 
+
+NSGA2 --> Population
+NSGA2 --> GeneticOperators
+NSGA2 --> Evaluator
+NSGA2 --> ResultsSaver
+Population --> Individual
+GeneticOperators --> Population
+GeneticOperators --> Individual
+Evaluator --> ProcessPool
+Evaluator --> SimulationRunner
+ProcessPool --> Evaluator
+SimulationRunner --> SimulationModel
+SimulationModel --> Machine
+SimulationModel --> DelayBuffer
+SimulationModel --> ResultsSaver
+Individual --> Evaluator
+ResultsSaver --> NSGA2

@@ -1,0 +1,4 @@
+loading_robot_process_time_reduction10percent_flag,conveyor_belt_process_time_reduction10percent_flag,washing_machine_process_time_reduction10percent_flag,hantering_cell_process_time_reduction10percent_flag,presses_cell1_process_time_reduction10percent_flag,presses_cell2_process_time_reduction10percent_flag,quality_station_cell_process_time_reduction10percent_flag,wip,energy consumption per part
+1,0,1,1,1,1,0,18.176984126984127,0.4059768338171698
+0,0,1,1,1,1,0,18.063194444444445,0.406579893735407
+1,0,1,1,1,1,1,18.04950396825397,0.4072844421950821

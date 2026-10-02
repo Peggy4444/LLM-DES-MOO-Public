@@ -1,0 +1,3 @@
+generation,individual_index,post_loading_buffer_capacity,post_conveyor_buffer_capacity,post_washing_buffer_capacity,pre_press1_buffer_capacity,pre_press2_buffer_capacity,post_press12_buffer_capacity,throughput,energy consumption per part
+6,11,9,1,8,6,3,8,27.395238095238096,0.4491771829501502
+7,1,9,1,1,4,4,8,27.517857142857142,0.449663254788134

@@ -1,0 +1,34 @@
+flowchart TD
+InputVariables["**Input Variables**<br/>Buffer capacities list for 11 buffers<br/>Domain for each capacity {1-10}"]
+MOO_Algorithm["**MOO Algorithm**<br/>Algorithm NSGA II<br/>Attributes pop_size 50 n_gen 100 n_cores 50 var_bounds {1-10}"]
+Population["**Population**<br/>List of Individuals<br/>Each Individual stores integer vector of 11 capacities and objective values"]
+EvaluatePopulation["**Evaluate Population**<br/>Evaluates feasible individuals in parallel<br/>Filters infeasible individuals"]
+ParallelRunner["**Parallel Runner**<br/>Uses multiprocessing Pool with N_CORES workers<br/>Maps evaluate_individual across population"]
+SimulationModel["**Simulation Model**<br/>Attributes seed sim_time warmup measure_until buffers machines<br/>Methods run_simulation part_generator sample_wip reset_machine_stats<br/>Returns metrics overall and machine_energy"]
+Machine_Class["**Machine Class**<br/>Attributes name process_time availability mttr working_power waiting_power capacity resource stats is_up<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+DelayBuffer_Class["**DelayBuffer Class**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get free_capacity in_transit_count"]
+Evaluator["**Evaluator**<br/>Methods evaluate_individual run_simulation_with_capacities<br/>Runs multiple seeds and averages results<br/>Constraint infeasible if produced_parts equals zero"]
+Objectives["**Objectives**<br/>Objective f1 minimize WIP<br/>Objective f2 maximize Throughput implemented as minimizing negative throughput"]
+SelectionOperators["**Selection Operators**<br/>Methods tournament_selection crossover mutate fast_non_dominated_sort crowding_distance environmental_selection assign_rank_and_crowding"]
+CSVLogger["**CSV Logger**<br/>Writes generation logs to CSV<br/>Columns include generation individual_id capacities wip throughput"]
+OutputVariables["**Output Variables**<br/>WIP value to minimize<br/>Throughput value to maximize"]
+
+InputVariables --> MOO_Algorithm
+MOO_Algorithm --> Population
+Population --> EvaluatePopulation
+EvaluatePopulation --> ParallelRunner
+ParallelRunner --> Evaluator
+Evaluator --> SimulationModel
+SimulationModel --> Machine_Class
+SimulationModel --> DelayBuffer_Class
+SimulationModel --> Evaluator
+Evaluator --> Objectives
+Objectives --> MOO_Algorithm
+MOO_Algorithm --> SelectionOperators
+SelectionOperators --> MOO_Algorithm
+MOO_Algorithm --> CSVLogger
+MOO_Algorithm --> OutputVariables
+
+CSVLogger --> OutputVariables
+Evaluator --> CSVLogger
+SelectionOperators --> Population

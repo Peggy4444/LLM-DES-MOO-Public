@@ -1,0 +1,48 @@
+flowchart TD
+N_start["**Start** 
+Initiate NSGA II based optimization to adjust three buffers in the production simulation"]
+
+N_buffer_capacity_problem["**BufferCapacityProblem** 
+Attributes: n_var n_obj n_constr xl {1-10} xu {1-10} n_replications base_seed n_cores 
+Methods: __init__ _evaluate"]
+
+N_nsga2_setup["**NSGA2 Setup** 
+Attributes: pop_size n_gen sampling crossover mutation termination 
+Methods: __init__"]
+
+N_parallel_evaluation["**Parallel Evaluation** 
+Process: Prepare tasks for each candidate and evaluate in parallel using multiprocessing"]
+
+N_run_simulation["**Run Simulation** 
+Calls run_simulation with caps and seeds to obtain throughput and wip"]
+
+N_objectives["**Compute Objectives** 
+Attributes: none 
+Methods: wip throughput objective calculation"]
+
+N_nsga2_loop["**NSGA2 Loop** 
+Process: Update population using NSGA2 and iterate until termination"]
+
+N_termination_check["**Termination Check** 
+Decision: if generation limit reached stop else continue loop"]
+
+N_results["**Pareto Front** 
+Description: Set of buffer capacities with corresponding wip and throughput"]
+
+N_export_results["**Export Results** 
+Description: Save Pareto front to CSV for decision support"]
+
+N_end["**End** 
+Description: Provide actionable buffer design options to management"]
+
+N_start --> N_buffer_capacity_problem
+N_buffer_capacity_problem --> N_nsga2_setup
+N_nsga2_setup --> N_parallel_evaluation
+N_parallel_evaluation --> N_run_simulation
+N_run_simulation --> N_objectives
+N_objectives --> N_nsga2_loop
+N_nsga2_loop --> N_parallel_evaluation
+N_nsga2_loop --> N_termination_check
+N_termination_check --> N_results
+N_results --> N_export_results
+N_export_results --> N_end

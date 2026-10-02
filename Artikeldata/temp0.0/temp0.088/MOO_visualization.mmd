@@ -1,0 +1,34 @@
+flowchart TD
+StartNode["**Start**<br/>Run optimization"] 
+RunNSGA2["**run_nsga2_optimization**<br/>configure problem algorithm and termination"] 
+BufferProblem["**BufferCapacityProblem**<br/>6 decision variables and 2 objectives"] 
+DecisionVars["**Decision Variables**<br/>6 buffer capacities {1-10} integer"] 
+Objectives["**Objectives**<br/>minimize wip<br/>maximize throughput"] 
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>population sampling crossover mutation<br/>evolutionary loop"] 
+EvaluatePool["**Multiprocessing Pool**<br/>parallel evaluate individuals across cores"] 
+EvaluateSingle["**evaluate_single_individual**<br/>map individual to caps<br/>run n replications and aggregate"] 
+RunSimCaps["**run_simulation_with_caps**<br/>construct DelayBuffers using caps<br/>instantiate Machines and run sim replications"] 
+RunSim["**run_simulation**<br/>event driven sim environment<br/>sample throughput and wip metrics"] 
+DelayBufferClass["**DelayBuffer**<br/>attributes cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"] 
+MachineClass["**Machine**<br/>attributes input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"] 
+ObjectiveReturn["**Objective Values**<br/>avg_wip min and avg_throughput max returned as optimization vector"] 
+ResultNode["**Result**<br/>Pareto front and history object"] 
+ExportCSV["**export_history_to_csv**<br/>serialize generation history to CSV file"] 
+
+StartNode --> RunNSGA2
+RunNSGA2 --> BufferProblem
+RunNSGA2 --> NSGA2Algorithm
+BufferProblem --> DecisionVars
+BufferProblem --> Objectives
+NSGA2Algorithm --> BufferProblem
+NSGA2Algorithm --> EvaluatePool
+EvaluatePool --> EvaluateSingle
+EvaluateSingle --> RunSimCaps
+RunSimCaps --> RunSim
+RunSim --> DelayBufferClass
+RunSim --> MachineClass
+RunSimCaps --> ObjectiveReturn
+ObjectiveReturn --> BufferProblem
+BufferProblem --> NSGA2Algorithm
+NSGA2Algorithm --> ResultNode
+ResultNode --> ExportCSV

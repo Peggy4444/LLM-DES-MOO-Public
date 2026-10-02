@@ -1,0 +1,34 @@
+flowchart TD
+Start["**Start**<br/>Initialize MOO run and RNG seed"]
+NSGA2_Optimization["**NSGA2 Algorithm**<br/>pop_size n_gen sampling crossover mutation<br/>Run minimize loop and evolve population"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Method _evaluate packs X into tasks and collects F"]
+Evaluate_Population["**Evaluate Population**<br/>Create tasks for each individual<br/>Each task holds candidate capacities"]
+Parallel_Evaluator["**Parallel Evaluator**<br/>multiprocessing Pool with fixed n_cores<br/>map evaluate_single_individual across tasks"]
+Evaluate_Single_Individual["**Evaluate Single Individual**<br/>Inputs caps n_replications base_seed warmup measure_until<br/>Runs multiple replications and returns average KPIs<br/>Output objectives vector [wip negative_throughput]"]
+Run_Simulation_MOO["**Run Simulation MOO**<br/>Build simpy env with decision variable capacities<br/>Warmup sampling run until measure_until<br/>Returns per replication KPIs"]
+DelayBuffer_Class["**DelayBuffer**<br/>Attributes cap delay tokens store in_transit<br/>Methods put get free_capacity in_transit_count"]
+Machine_Class["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption processed_count"]
+Simulation_Components["**Simulation Components**<br/>Part generator splitter merger delay buffers machines<br/>WIP sampling every 600 seconds"]
+Simulation_Output["**Simulation Output**<br/>Produced parts throughput avg_wip machine energy stats<br/>Returned to individual evaluator"]
+Objectives_Node["**Objectives**<br/>f1 average WIP minimize<br/>f2 negative average throughput minimize to maximize throughput"]
+Archive_History["**Export History**<br/>export_history_to_csv writes generation solutions and KPIs to CSV"]
+End["**End**<br/>Final Pareto front and CSV available"]
+
+Start --> NSGA2_Optimization
+NSGA2_Optimization --> BufferCapacityProblem
+BufferCapacityProblem --> Evaluate_Population
+Evaluate_Population --> Parallel_Evaluator
+Parallel_Evaluator --> Evaluate_Single_Individual
+Evaluate_Single_Individual --> Run_Simulation_MOO
+Run_Simulation_MOO --> Simulation_Components
+Simulation_Components --> DelayBuffer_Class
+Simulation_Components --> Machine_Class
+DelayBuffer_Class --> Simulation_Output
+Machine_Class --> Simulation_Output
+Simulation_Components --> Simulation_Output
+Simulation_Output --> Evaluate_Single_Individual
+Evaluate_Single_Individual --> Parallel_Evaluator
+Parallel_Evaluator --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2_Optimization
+NSGA2_Optimization --> Archive_History
+Archive_History --> End

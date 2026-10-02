@@ -1,0 +1,32 @@
+flowchart TD
+NSGA_Optimizer["**NSGA II Optimizer**<br/>run_nsga2_optimization<br/>configures algorithm sampling crossover mutation"]
+BufferProblem["**BufferCapacityProblem**<br/>defines decision variables caps for 6 DelayBuffers<br/>implements _evaluate to compute objectives"]
+DecisionVars["**Decision Variables**<br/>6 buffer capacities<br/>domain {1-10} integer"]
+GeneticOps["**Genetic Operators**<br/>IntegerRandomSampling SBX PM<br/>population and termination settings"]
+EvalPool["**Evaluator Pool**<br/>multiprocessing Pool size {50}<br/>maps evaluations in parallel"]
+IndividualEval["**Individual Evaluator**<br/>evaluate_single_individual<br/>runs n replications per candidate"]
+SimRunner["**Simulation Runner**<br/>run_simulation_with_caps<br/>builds sim using caps and returns metrics"]
+DelayBuffer["**DelayBuffer**<br/>attribute cap set from decision variable<br/>methods put get in_transit_count free_capacity"]
+MachineClass["**Machine**<br/>creates machines with process_time availability mttr<br/>records throughput wip energy stats"]
+Objectives["**Objectives**<br/>f1 average WIP to minimize<br/>f2 negative throughput to minimize"]
+HistoryExporter["**History Exporter**<br/>export_history_to_csv<br/>writes population history to CSV"]
+ParetoFront["**Pareto Front**<br/>result of minimize<br/>final trade off set of solutions"]
+
+NSGA_Optimizer -->|creates| BufferProblem
+NSGA_Optimizer -->|uses| GeneticOps
+BufferProblem -->|receives candidates X| DecisionVars
+BufferProblem -->|parallel evaluate| EvalPool
+EvalPool -->|maps to| IndividualEval
+IndividualEval -->|calls| SimRunner
+SimRunner -->|constructs| DelayBuffer
+SimRunner -->|constructs| MachineClass
+DelayBuffer -->|provides behavior to| MachineClass
+SimRunner -->|returns metrics throughput and wip to| IndividualEval
+IndividualEval -->|aggregates replications and returns objectives to| EvalPool
+EvalPool -->|returns results F to| BufferProblem
+BufferProblem -->|provides objectives to| NSGA_Optimizer
+NSGA_Optimizer -->|updates population and generations| ParetoFront
+ParetoFront -->|final archive sent to| HistoryExporter
+HistoryExporter -->|exports CSV of generations and KPIs| ParetoFront
+Objectives -->|defined in| BufferProblem
+DecisionVars -->|encoded in population by| GeneticOps

@@ -1,0 +1,34 @@
+flowchart TD
+NSGA2Optimizer["**NSGA2 Optimizer**<br/>Attributes: pop_size n_gen n_replications base_seed n_cores<br/>Method: run_nsga2_optimization"]
+BufferCapacityProblem["**Buffer Capacity Problem**<br/>Class extends Problem from pymoo<br/>Attributes: n_var n_obj xl xu n_replications base_seed n_cores<br/>Method: _evaluate uses multiprocessing pool to evaluate population"]
+EvaluatorWorker["**Evaluator Worker**<br/>Function evaluate_single_individual<br/>Inputs: candidate caps warmup measure_until base_seed n_replications<br/>Method: calls run_simulation_with_caps for n replications<br/>Returns: average wip and negative average throughput"]
+MultiprocessingPool["**Multiprocessing Pool**<br/>Creates worker pool with n_cores<br/>Method: pool.map over evaluate_single_individual tasks"]
+SimulationRunner["**Simulation Runner**<br/>Functions run_simulation and run_simulation_with_caps<br/>Inputs: seed caps {1-10} warmup measure_until<br/>Method: builds environment DelayBuffers Machines processes sampling and returns metrics throughput wip produced_parts machine_energy"]
+DelayBufferClass["**Delay Buffer**<br/>Attributes: cap delay store tokens _in_transit<br/>Methods: put get free_capacity in_transit_count"]
+MachineClass["**Machine**<br/>Attributes: name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource stats is_up repair_event<br/>Methods: run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+InputCapacities["**Input Variables**<br/>All buffer capacities for six buffers<br/>Domain: discrete values {1-10}"]
+Objectives["**MOO Objectives**<br/>Objective 1 minimize wip<br/>Objective 2 maximize throughput implemented as minimize negative throughput"]
+OptimizationResult["**Optimization Result**<br/>res from pymoo minimize<br/>Attributes: X F history save_history"]
+ResultExporter["**Result Exporter**<br/>Function export_history_to_csv<br/>Inputs: OptimizationResult filename output_dir<br/>Outputs: CSV rows with generation individual caps wip throughput"]
+
+NSGA2Optimizer --> BufferCapacityProblem
+NSGA2Optimizer --> OptimizationResult
+BufferCapacityProblem --> MultiprocessingPool
+MultiprocessingPool --> EvaluatorWorker
+EvaluatorWorker --> SimulationRunner
+SimulationRunner --> DelayBufferClass
+SimulationRunner --> MachineClass
+InputCapacities --> SimulationRunner
+Objectives --> NSGA2Optimizer
+EvaluatorWorker --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2Optimizer
+OptimizationResult --> ResultExporter
+
+NSGA2Optimizer -. runs optimization and uses .-> BufferCapacityProblem
+BufferCapacityProblem -. constructs evaluation tasks .-> MultiprocessingPool
+MultiprocessingPool -. parallel evaluation .-> EvaluatorWorker
+EvaluatorWorker -. replicates simulation runs .-> SimulationRunner
+SimulationRunner -. instantiates buffers and machines .-> DelayBufferClass
+SimulationRunner -. instantiates machines with stats .-> MachineClass
+OptimizationResult -. history saved .-> ResultExporter
+ResultExporter -. writes CSV of generations individuals caps objectives .-> endNode["**End**<br/>CSV exported and Pareto results available"]

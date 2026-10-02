@@ -1,0 +1,30 @@
+flowchart TD
+DV["**Decision Variables**<br/>Buffer capacities for each buffer<br/>Type integer {1-10} per variable"]
+NSGA2["**NSGA2 Optimizer**<br/>Population based multi objective search<br/>Controls generations and operators"]
+Problem["**BufferCapacityProblem**<br/>Attributes base_seed and n_cores<br/>Elementwise evaluator linked to optimizer<br/>Method _evaluate fills out F for population"]
+Pool["**Multiprocessing Pool**<br/>Parallel workers equal to n_cores<br/>Maps individuals to evaluator workers"]
+Evaluator["**Evaluator Worker**<br/>evaluate_single_individual function<br/>Inputs caps and seed<br/>Returns objectives [wip, -throughput]"]
+RunCaps["**run_simulation_with_caps**<br/>Applies caps to global buffers<br/>Runs REPLICATIONS replications and aggregates KPIs"]
+GlobalBuffers["**Global BUFFERS**<br/>Capacities stored here and modified by optimizer<br/>Names: PostLoading PostConveyor PostWashing PrePress1 PrePress2 PostPresses"]
+RunRep["**run_replication**<br/>Creates simpy environment and entities<br/>Runs one simulation replication<br/>Returns throughput mean_wip energy_per_part"]
+SimModel["**Simulation Model**<br/>Classes Machine and Buffer<br/>Key methods: process_part put get process_item<br/>Tracks energy and sojourn times"]
+Objectives["**Objectives**<br/>f1 average WIP to minimize<br/>f2 negative throughput to minimize thus maximize throughput"]
+Results["**Result Collector**<br/>Collects out F and history from optimizer<br/>Provides final Pareto set and metrics"]
+Export["**Export History**<br/>Writes CSV of generations individuals caps wip throughput<br/>Consumes optimization history"]
+
+DV --> NSGA2
+NSGA2 --> Problem
+Problem --> Pool
+Pool --> Evaluator
+Evaluator --> RunCaps
+RunCaps --> GlobalBuffers
+RunCaps --> RunRep
+RunRep --> SimModel
+SimModel --> RunRep
+RunRep --> RunCaps
+RunCaps --> Evaluator
+Evaluator --> Pool
+Pool --> Problem
+Problem --> NSGA2
+NSGA2 --> Results
+Results --> Export

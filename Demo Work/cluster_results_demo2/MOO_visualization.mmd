@@ -1,0 +1,55 @@
+flowchart TD
+Start["**Start**<br/>Begin MOO optimization workflow"]
+InitPopulation["**Initialize Population**<br/>Create initial candidate flag vectors"]
+EvaluatePopulation["**Evaluate Population**<br/>Call ProcessTimeReductionProblem evaluate"]
+IndividualFlags["**Individual Flags**<br/>Decision vector of binary flags {0 1} for 7 machines"]
+FeasibilityCheck["**Feasibility Check**<br/>Ensure flags are binary and constraints met"]
+ParallelExecutor["**Parallel Executor**<br/>ProcessPoolExecutor with fixed workers for replications"]
+EvalReplication["**Evaluate Single Replication**<br/>evaluate_single_replication computes throughput wip energy"]
+RunSimWithFlags["**Run Simulation With Flags**<br/>run_simulation_with_process_flags wrapper"]
+ApplyOverrides["**Apply Overrides**<br/>Backup global overrides then set PROCESS_TIME_OVERRIDES"]
+RestoreOverrides["**Restore Overrides**<br/>Restore global PROCESS_TIME_OVERRIDES after run"]
+RunSimulation["**Run Simulation**<br/>Set up simpy Environment run warmup sampling and measurement"]
+BuildEnvMachines["**Build Environment and Machines**<br/>Create DelayBuffer and Machine instances with get_pt reading overrides"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay store tokens methods put get in_transit_count free_capacity"]
+MachineClass["**Machine Class**<br/>Attributes process_time availability mttr working_power waiting_power methods run breakdown energy computations"]
+PartGenerator["**Part Generator**<br/>Continually produces parts into raw input store"]
+SampleWIP["**Sample WIP**<br/>Periodically sample ready in transit and in machine counts"]
+ComputeMetrics["**Compute Metrics**<br/>Compute throughput wip produced parts and energy per machine and per part"]
+ReturnReplicationResult["**Return Replication Result**<br/>Throughput wip energy per part or infeasible marker"]
+AggregateResults["**Aggregate Replications**<br/>Collect replications per individual compute mean wip mean energy"]
+UpdateObjectives["**Update Objective Array**<br/>Set F row for individual with aggregated objectives"]
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>Selection crossover mutation eliminate duplicates iterate generations"]
+VariationOperators["**Variation Operators**<br/>Sampling crossover mutation produce next population"]
+Termination["**Termination Check**<br/>Stop when generation budget reached"]
+ExportCSV["**Export History**<br/>Export feasible solutions and KPIs to CSV file"]
+End["**End**<br/>Optimization complete and results exported"]
+
+Start --> InitPopulation
+InitPopulation --> EvaluatePopulation
+EvaluatePopulation --> IndividualFlags
+IndividualFlags --> FeasibilityCheck
+FeasibilityCheck -- valid --> ParallelExecutor
+FeasibilityCheck -- invalid --> UpdateObjectives
+ParallelExecutor --> EvalReplication
+EvalReplication --> RunSimWithFlags
+RunSimWithFlags --> ApplyOverrides
+ApplyOverrides --> RunSimulation
+RunSimulation --> BuildEnvMachines
+BuildEnvMachines --> DelayBufferClass
+BuildEnvMachines --> MachineClass
+BuildEnvMachines --> PartGenerator
+RunSimulation --> SampleWIP
+SampleWIP --> ComputeMetrics
+ComputeMetrics --> ReturnReplicationResult
+ReturnReplicationResult --> RestoreOverrides
+RestoreOverrides --> EvalReplication
+EvalReplication --> AggregateResults
+AggregateResults --> UpdateObjectives
+UpdateObjectives --> NSGA2Algorithm
+NSGA2Algorithm --> VariationOperators
+VariationOperators --> EvaluatePopulation
+NSGA2Algorithm --> Termination
+Termination -- not finished --> VariationOperators
+Termination -- finished --> ExportCSV
+ExportCSV --> End

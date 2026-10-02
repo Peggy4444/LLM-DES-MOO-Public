@@ -1,0 +1,4 @@
+post_loading_capacity,post_conveyor_capacity,post_washing_capacity,pre_press1_capacity,pre_press2_capacity,post_press12_capacity,wip,throughput
+8,1,4,2,2,7,0.0,0.0
+8,1,4,2,2,7,0.0,0.0
+8,1,4,2,2,7,0.0,0.0

@@ -1,0 +1,41 @@
+flowchart TD
+    N_start["**Start**<br/>Trigger the MOO flow to optimize 3 buffers using NSGA II"]
+    N_problem_definition["**Problem Definition**<br/>Define a multi objective problem with 3 decision variables buffers capacities each in {1-10} and two objectives WIP and throughput"]
+    N_decision_variables["**Decision Variables**<br/>Three buffers x1 x2 x3 in {1-10}"]
+    N_objectives["**Objectives**<br/>Minimize WIP and maximize throughput (throughput encoded as negative for the optimizer)"]
+    N_nsga2_setup["**NSGA II Setup**<br/>Algorithm with SBX crossover and PM mutation; Integer sampling; terminate after n_gen"]
+    N_evaluate_individual["**Evaluate Individual**<br/>Evaluate each candidate caps across n_replications to estimate WIP and throughput"]
+    N_run_simulation["**Run Simulation Model**<br/>Call run_simulation with the caps and seeds"]
+    N_replications["**Replications and Seeds**<br/>Use base seed and n_replications to generate diverse seeds"]
+    N_feasibility["**Feasibility Check**<br/>Caps must lie in feasible range; infeasible yield NaN in F"]
+    N_parallel["**Parallel Evaluation**<br/>Distribute evaluations across CPU cores to speed up"]
+    N_collect["**Collect and Build F**<br/>Assemble objective matrix F with WIP and throughput values"]
+    N_algorithm["**NSGA II Iteration**<br/>Update population using sampling SBX and mutation; record history"]
+    N_pareto["**Pareto History**<br/>Store history for export to CSV"]
+    N_export["**Export History**<br/>Write feasible solutions to CSV with WIP and throughput"]
+    N_end["**End**<br/>Results include Pareto frontier and CSV export"]
+    N_class_BufferCapacityProblem["**BufferCapacityProblem Class**<br/>Attributes: n_var, n_obj, n_constr, xl, xu, n_replications, base_seed, n_cores<br/>Methods: __init__, _evaluate"]
+    N_class_NS_GA2["**NSGA2 Algorithm Class**<br/>Attributes: pop_size, sampling, crossover, mutation, termination<br/>Methods: __init__, minimize"]
+    N_function_evaluateSingleInd["**evaluate_single_individual Function**<br/>Inputs: x, n_replications, base_seed, warmup, measure_until<br/>Outputs: [f1, f2]]"]
+    N_function_runSimulation["**run_simulation Function**<br/>Inputs: seed, caps, warmup, measure_until<br/>Outputs: result dict"]
+    N_function_exportCsv["**export_history_to_csv Function**<br/>Inputs: result, filename<br/>Outputs: CSV file with Pareto data"]
+    N_function_exportCsv2["**Export Helper**<br/>Uses history to build CSV rows"]
+    N_start --> N_problem_definition
+    N_problem_definition --> N_decision_variables
+    N_decision_variables --> N_objectives
+    N_objectives --> N_nsga2_setup
+    N_nsga2_setup --> N_evaluate_individual
+    N_evaluate_individual --> N_run_simulation
+    N_run_simulation --> N_replications
+    N_replications --> N_feasibility
+    N_feasibility --> N_parallel
+    N_parallel --> N_collect
+    N_collect --> N_algorithm
+    N_algorithm --> N_pareto
+    N_pareto --> N_export
+    N_export --> N_end
+    %% Class and function relationships for UML flavor
+    N_class_BufferCapacityProblem --> N_function_evaluateSingleInd
+    N_class_NS_GA2 --> N_nsga2_setup
+    N_function_evaluateSingleInd --> N_function_runSimulation
+    N_export --> N_function_exportCsv

@@ -1,0 +1,52 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+raw_input["**Raw input store**"]:::store
+loading_robot["**Loading robot**"]:::machine
+post_loading_buffer["**Post loading buffer**"]:::buffer
+conveyor_belt["**Conveyor belt**"]:::machine
+post_conveyor_buffer["**Post conveyor buffer**"]:::buffer
+washing_machine["**Washing machine**"]:::machine
+post_washing_buffer["**Post washing buffer**"]:::buffer
+hantering_cell["**Hantering cell**"]:::machine
+pre_press1["**Pre-press1 store**"]:::store
+pre_press2["**Pre-press2 store**"]:::store
+pre_press1_buffer["**Pre-press1 buffer**"]:::buffer
+pre_press2_buffer["**Pre-press2 buffer**"]:::buffer
+splitter["**Splitter**"]:::helper
+press1_out["**Press1 out store**"]:::store
+press2_out["**Press2 out store**"]:::store
+presses_cell1["**Presses cell 1**"]:::machine
+presses_cell2["**Presses cell 2**"]:::machine
+merger["**Merger**"]:::helper
+post_press12_buffer["**Post-press12 buffer**"]:::buffer
+quality_station["**Quality station cell**"]:::machine
+sink["**Sink (Finished goods)**"]:::sink
+defects["**Defects sink**"]:::defect
+
+raw_input --> loading_robot
+loading_robot --> post_loading_buffer
+post_loading_buffer --> conveyor_belt
+conveyor_belt --> post_conveyor_buffer
+post_conveyor_buffer --> washing_machine
+washing_machine --> post_washing_buffer
+post_washing_buffer --> hantering_cell
+hantering_cell --> pre_press1
+pre_press1 --> splitter
+splitter --> pre_press1_buffer
+splitter --> pre_press2_buffer
+pre_press1_buffer --> presses_cell1
+pre_press2_buffer --> presses_cell2
+presses_cell1 --> press1_out
+presses_cell2 --> press2_out
+press1_out --> merger
+press2_out --> merger
+merger --> post_press12_buffer
+post_press12_buffer --> quality_station
+quality_station --> sink
+quality_station --> defects

@@ -1,0 +1,31 @@
+flowchart TD
+DecisionVars["**Decision Variables**<br/>Six buffer capacities<br/>Discrete integers {1-10}"]
+Objectives["**Objectives**<br/>Minimize WIP<br/>Maximize Throughput"]
+NSGA2Runner["**NSGA2 Runner**<br/>run_nsga2_optimization configures algorithm<br/>pop size crossover mutation termination"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Method _evaluate receives population matrix X"]
+PoolProcess["**Multiprocessing Pool**<br/>Parallel evaluation across n_cores processes<br/>maps evaluate_single_individual"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual function<br/>runs multiple replications and aggregates metrics"]
+Simulator["**Simulation Runner**<br/>run_simulation executes SimPy model<br/>returns throughput and average WIP"]
+DelayBuffer["**DelayBuffer Class**<br/>Attributes cap delay store tokens _in_transit<br/>Methods put get free_capacity in_transit_count"]
+MachineClass["**Machine Class**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power defect_rate capacity<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+PartGenerator["**Part Generator**<br/>generates parts into raw input every second"]
+WIPSampler["**WIP Sampler**<br/>samples ready in_transit and in_machines every 600 seconds"]
+Results["**Optimization Results**<br/>Pareto front and history object from minimize"]
+CSVExporter["**CSV Exporter**<br/>export_history_to_csv reads history and writes CSV file"]
+
+DecisionVars --> NSGA2Runner
+Objectives --> NSGA2Runner
+NSGA2Runner --> BufferProblem
+BufferProblem --> PoolProcess
+PoolProcess --> Evaluator
+Evaluator --> Simulator
+Simulator --> DelayBuffer
+Simulator --> MachineClass
+Simulator --> PartGenerator
+Simulator --> WIPSampler
+MachineClass --> DelayBuffer
+DelayBuffer --> MachineClass
+Evaluator --> BufferProblem
+BufferProblem --> NSGA2Runner
+NSGA2Runner --> Results
+Results --> CSVExporter

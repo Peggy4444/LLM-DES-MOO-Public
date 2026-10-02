@@ -1,0 +1,97 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+PartGenerator["**Part generator** 
+Unbounded raw supply
+Rate=1s"]:::store
+RawInput["**Raw input** 
+Store Cap=1000"]:::store
+LoadingRobot["**Loading robot** 
+CT=12s
+AVB=90.49%
+MTTR=68s"]:::machine
+PostLoadingBuffer["**Post loading buffer** 
+DelayBuffer Cap=2
+Delay=10s"]:::buffer
+ConveyorBelt["**Conveyor belt** 
+CT=6s
+AVB=100.0%
+MTTR=1s"]:::machine
+PostConveyorBuffer["**Post conveyor buffer** 
+DelayBuffer Cap=2
+Delay=10s"]:::buffer
+WashingMachine["**Washing machine** 
+CT=14s
+AVB=80.89%
+MTTR=269s"]:::machine
+PostWashingBuffer["**Post washing buffer** 
+DelayBuffer Cap=2
+Delay=10s"]:::buffer
+HanteringCell["**Hantering cell** 
+CT=25s
+AVB=97.79%
+MTTR=74s"]:::machine
+PrePress["**Pre-press buffer** 
+Store Cap=6"]:::buffer
+SplitterNode["**Splitter (even)** 
+Alternating routing"]:::helper
+PrePress1Buffer["**Pre-press1 buffer** 
+DelayBuffer Cap=3
+Delay=32s"]:::buffer
+PrePress2Buffer["**Pre-press2 buffer** 
+DelayBuffer Cap=3
+Delay=32s"]:::buffer
+PressesCell1["**Presses cell 1** 
+CT=175s
+AVB=87.79%
+MTTR=73s"]:::machine
+PressesCell2["**Presses cell 2** 
+CT=176s
+AVB=87.69%
+MTTR=74s"]:::machine
+Press1Out["**Press1 out** 
+Store Cap=3"]:::buffer
+Press2Out["**Press2 out** 
+Store Cap=3"]:::buffer
+MergerNode["**Merger** 
+Combine parallel outputs"]:::helper
+PostPress12Buffer["**Post press12 buffer** 
+DelayBuffer Cap=3
+Delay=32s"]:::buffer
+QualityStation["**Quality station cell** 
+CT=41s
+AVB=85.87%
+MTTR=66s
+Defect=8.9%"]:::machine
+FinishedSink["**Finished sink** 
+Store Cap=100000"]:::sink
+DefectSink["**Defects sink** 
+Store Cap=100000"]:::defect
+
+PartGenerator --> RawInput
+RawInput --> LoadingRobot
+LoadingRobot --> PostLoadingBuffer
+PostLoadingBuffer --> ConveyorBelt
+ConveyorBelt --> PostConveyorBuffer
+PostConveyorBuffer --> WashingMachine
+WashingMachine --> PostWashingBuffer
+PostWashingBuffer --> HanteringCell
+HanteringCell --> PrePress
+PrePress --> SplitterNode
+SplitterNode -->|alt A| PrePress1Buffer
+SplitterNode -->|alt B| PrePress2Buffer
+PrePress1Buffer --> PressesCell1
+PrePress2Buffer --> PressesCell2
+PressesCell1 --> Press1Out
+PressesCell2 --> Press2Out
+Press1Out --> MergerNode
+Press2Out --> MergerNode
+MergerNode --> PostPress12Buffer
+PostPress12Buffer --> QualityStation
+QualityStation --> FinishedSink
+QualityStation -->|defect| DefectSink

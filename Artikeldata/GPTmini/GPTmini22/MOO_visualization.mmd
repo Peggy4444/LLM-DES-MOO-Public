@@ -1,0 +1,37 @@
+flowchart TD
+Start["**Start**<br/>Run MOO optimization"]
+DecisionVars["**Decision Variables**<br/>Six buffer capacities<br/>Discrete domain {1-10}"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>Population based multi objective search<br/>Uses sampling crossover mutation"]
+ProblemClass["**BufferCapacityProblem**<br/>Defines variable bounds and evaluation interface<br/>Holds n replications and base seed"]
+EvaluateIndividuals["**Evaluate Individuals**<br/>Validate integer caps and bounds<br/>Prepare evaluation tasks for valid individuals"]
+ParallelEval["**Parallel Evaluation**<br/>Multiprocessing pool with exact cores 50<br/>Map tasks to worker processes"]
+EvalSingle["**evaluate single individual**<br/>Validate caps again<br/>Run multiple replications<br/>Return objectives wip and negative throughput"]
+RunSimCaps["**run simulation with caps**<br/>Build production line using given capacities<br/>Warmup reset and sample WIP and throughput"]
+RunSim["**run simulation**<br/>Construct machines and buffers<br/>Simulate event driven production<br/>Collect machine stats and outputs"]
+MachineClass["**Machine Class**<br/>Processes parts and models breakdowns<br/>Tracks working waiting blocked times and energy"]
+DelayBufferClass["**DelayBuffer Class**<br/>Capacitated buffer with delay tokens<br/>Tracks ready and in transit counts"]
+AggregateResults["**Aggregate Results**<br/>Average throughput and WIP over replications<br/>Produce objectives for NSGA2"]
+NSGA2Update["**NSGA2 Update**<br/>Assign fitness and perform selection<br/>Elitism and variation produce next generation"]
+Termination["**Termination**<br/>Stop after configured number of generations"]
+ExportCSV["**Export CSV**<br/>Write valid evaluated history to results folder<br/>Exclude invalid individuals"]
+End["**End**<br/>Pareto front and history exported"]
+
+Start --> DecisionVars
+DecisionVars --> NSGA2Algo
+NSGA2Algo --> ProblemClass
+ProblemClass --> EvaluateIndividuals
+EvaluateIndividuals --> ParallelEval
+ParallelEval --> EvalSingle
+EvalSingle --> RunSimCaps
+RunSimCaps --> RunSim
+RunSim --> MachineClass
+RunSim --> DelayBufferClass
+MachineClass --> RunSim
+DelayBufferClass --> RunSim
+RunSim --> EvalSingle
+EvalSingle --> AggregateResults
+AggregateResults --> NSGA2Update
+NSGA2Update --> NSGA2Algo
+NSGA2Algo --> Termination
+Termination --> ExportCSV
+ExportCSV --> End

@@ -1,0 +1,25 @@
+flowchart TD
+StartNode["**Start**<br/>Run MOO optimization"]
+InputVars["**Decision Variables**<br/>All buffer capacities<br/>{1-10} discrete"]
+NSGA2_Optimizer["**NSGA2 Optimizer**<br/>Attributes pop_size n_gen sampling crossover mutation<br/>Methods run optimization minimize save history"]
+BufferProblem["**Buffer Capacity Problem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods _evaluate dispatch evaluation tasks to pool"]
+MultiprocessingPool["**Parallel Pool**<br/>Processes equal to n_cores<br/>Maps tasks to evaluator workers"]
+EvaluateWorker["**Evaluator Worker**<br/>Inputs caps seed replications warmup measure_until<br/>Method evaluate single individual returns objectives avg wip and neg throughput"]
+SimulationRunner["**Simulation Runner**<br/>Methods run simulation with caps run simulation<br/>Returns throughput wip produced parts and machine energy"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay tokens in_transit<br/>Methods put get free_capacity in_transit_count"]
+MachineClass["**Machine Class**<br/>Attributes process_time availability mttr working_power waiting_power capacity<br/>Methods run breakdown reset_machine_stats working_energy waiting_energy"]
+Objectives["**Objectives**<br/>Minimize WIP<br/>Maximize Throughput"]
+CSVExport["**Results Exporter**<br/>Method export history to csv writes generation individual caps wip throughput"]
+
+StartNode --> NSGA2_Optimizer
+InputVars --> NSGA2_Optimizer
+NSGA2_Optimizer --> BufferProblem
+BufferProblem --> MultiprocessingPool
+MultiprocessingPool --> EvaluateWorker
+EvaluateWorker --> SimulationRunner
+SimulationRunner --> DelayBufferClass
+SimulationRunner --> MachineClass
+EvaluateWorker --> Objectives
+NSGA2_Optimizer --> CSVExport
+CSVExport --> Objectives
+BufferProblem --> InputVars

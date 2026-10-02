@@ -1,0 +1,76 @@
+flowchart TD
+NSGA2_Optimizer["**NSGA2_Optimizer** 
+Attributes
+- pop_size
+- n_gen
+- n_replications
+- base_seed
+- result_history
+Methods
+- optimize
+- run_generation
+- collect_pareto_front
+- export_results"]
+BufferCapacityProblem["**BufferCapacityProblem** 
+Attributes
+- n_var
+- n_obj
+- xl
+- xu
+- n_replications
+- base_seed
+Methods
+- _evaluate
+- is_feasible
+- generate_initial_population"]
+FeasibilityChecker["**FeasibilityChecker** 
+Attributes
+- feasibility_rule
+Methods
+- is_feasible"]
+Evaluator["**Evaluator** 
+Attributes
+- n_replications
+- base_seed
+- last_result
+Methods
+- evaluate_individual
+- aggregate_results
+- compute_objectives"]
+Simulator["**Simulator** 
+Attributes
+- seed
+- env
+- buffers
+Methods
+- run_capacities_sim
+- compute_throughput_wip
+- reset"]
+ResultHistory["**ResultHistory** 
+Attributes
+- history
+- generation_count
+Methods
+- store_generation
+- get_pareto_front
+- export_to_csv"]
+CSVExporter["**CSVExporter** 
+Attributes
+- path
+- fields
+Methods
+- export"]
+Stakeholder["**Stakeholder** 
+Attributes
+- role
+Methods
+- review_pareto"]
+NSGA2_Optimizer --> BufferCapacityProblem
+BufferCapacityProblem --> Evaluator
+BufferCapacityProblem --> FeasibilityChecker
+FeasibilityChecker --> Evaluator
+Evaluator --> Simulator
+Simulator --> Evaluator
+Evaluator --> ResultHistory
+ResultHistory --> CSVExporter
+CSVExporter --> Stakeholder

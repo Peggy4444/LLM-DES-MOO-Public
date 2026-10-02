@@ -1,0 +1,17 @@
+flowchart TD
+  MOO_ENGINE["**MooEngine**<br/>Purpose: Orchestrates NSGA II based optimization for buffers in the production model<br/>Inputs: BufferCapacityProblem, NSGA2 config, replication settings {n_replications} and {n_cores}<br/>Outputs: Pareto front and history"]
+  NSGA2_WRAPPER["**NSGA2Wrapper**<br/>Purpose: Wraps pymoo NSGA2 for integration with the simulation<br/>Inputs: problem, algorithm config, termination, seeds<br/>Outputs: optimization result with Pareto front"]
+  BUFFER_CAPACITY_PROBLEM["**BufferCapacityProblem**<br/>Attributes: n_var n_obj n_constr xl xu n_replications base_seed n_cores<br/>Methods: __init__ _evaluate"]
+  EVALUATION_TASK["**EvaluationTask**<br/>Purpose: Evaluate a single individual across replications<br/>Methods: evaluate_single_individual"]
+  SIMULATION_RUNNER["**SimulationRunner**<br/>Purpose: Runs the simulation model for a given solution across replications<br/>Methods: run_simulation"]
+  EXPORTER["**DataExporter**<br/>Purpose: Persist optimization history to CSV<br/>Methods: export_history_to_csv"]
+
+  MOO_ENGINE --> NSGA2_WRAPPER
+  NSGA2_WRAPPER --> BUFFER_CAPACITY_PROBLEM
+  BUFFER_CAPACITY_PROBLEM --> EVALUATION_TASK
+  EVALUATION_TASK -->|returns F vector| NSGA2_WRAPPER
+  NSGA2_WRAPPER -->|updates population with F| BUFFER_CAPACITY_PROBLEM
+  EVALUATION_TASK --> SIMULATION_RUNNER
+  SIMULATION_RUNNER --> EVALUATION_TASK
+  MOO_ENGINE --> EXPORTER
+  EXPORTER --> MOO_ENGINE

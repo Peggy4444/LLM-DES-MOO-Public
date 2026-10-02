@@ -1,0 +1,72 @@
+flowchart TD
+Start["**Start** 
+User triggers multi objective optimization run"] 
+NSGA2_alg["**NSGA2 Algorithm** 
+Population based MOO using SBX and PM operators"] 
+BufferProblem["**BufferCapacityProblem** 
+Defines 6 integer decision variables 
+each in {1-10} and objective evaluation"] 
+InputVars["**Input Variables** 
+6 buffer capacities {1-10}"] 
+EvaluateMethod["**Problem._evaluate** 
+Builds tasks for each individual 
+prepares args for parallel evaluation"] 
+MultiprocessingPool["**Multiprocessing Pool** 
+Parallel map of evaluation tasks 
+n workers configured by problem"] 
+EvaluateIndividual["**evaluate_single_individual** 
+Runs n replications per candidate 
+aggregates avg WIP and avg throughput"] 
+Replications["**Replications** 
+Number of stochastic simulation runs 
+per individual"] 
+RunSimWithCaps["**run_simulation_with_caps** 
+Constructs simpy model using caps 
+creates DelayBuffer and Machine instances 
+runs warmup and measurement"] 
+SimulationEnv["**Simulation Environment** 
+simpy Environment 
+part generator and WIP sampler"] 
+DelayBufferClass["**DelayBuffer Class** 
+Capacity attribute cap from decision var 
+delayed put get tokens in_transit"] 
+MachineClass["**Machine Class** 
+process_time availability mttr capacity 
+collects working waiting blocked times 
+provides energy metrics"] 
+Metrics["**Metrics Returned** 
+Throughput and WIP per replication 
+Machine energy per station"] 
+Objectives["**Objectives** 
+f1 minimize WIP 
+f2 minimize negative throughput to maximize throughput"] 
+ResultCollector["**Collect F Values** 
+Assemble objective vectors into out F 
+returned to NSGA2"] 
+HistoryExport["**Export History** 
+Save all generation solutions 
+CSV with capacities WIP throughput"] 
+End["**End** 
+Optimization complete and results exported"] 
+
+Start --> NSGA2_alg
+NSGA2_alg --> BufferProblem
+InputVars --> BufferProblem
+NSGA2_alg --> EvaluateMethod
+BufferProblem --> EvaluateMethod
+EvaluateMethod --> MultiprocessingPool
+MultiprocessingPool --> EvaluateIndividual
+EvaluateIndividual --> Replications
+EvaluateIndividual --> RunSimWithCaps
+RunSimWithCaps --> SimulationEnv
+RunSimWithCaps --> DelayBufferClass
+RunSimWithCaps --> MachineClass
+SimulationEnv --> DelayBufferClass
+SimulationEnv --> MachineClass
+RunSimWithCaps --> Metrics
+Metrics --> EvaluateIndividual
+EvaluateIndividual --> MultiprocessingPool
+MultiprocessingPool --> ResultCollector
+ResultCollector --> NSGA2_alg
+NSGA2_alg --> HistoryExport
+HistoryExport --> End

@@ -1,0 +1,23 @@
+flowchart TD
+A["**Start**<br/>Initiates the MOO flow that tunes buffers using the simulation model"]
+B["**NSGA II Setup**<br/>Configures the optimization run with population size generations sampling SBX crossover and mutation PM and termination by n_gen"]
+C["**BufferCapacityProblem**<br/>Represents the 3 buffer capacity decision variables and 2 objectives<br/>Attributes n_var 3 n_obj 2 xl {1-10} xu {1-10} n_replications 5 base_seed 99 n_cores 1<br/>Methods _evaluate"]
+D["**Initial Sampling**<br/>Generates initial population for buffers using integer sampling in {1-10}"]
+E["**Evaluate Generation**<br/>Evaluates each candidate with parallel tasks using evaluate_single_individual across CPU cores"]
+F["**Evaluate Single Individual**<br/>Runs multiple replications via run_simulation and aggregates results<br/>Returns objectives wip and negative throughput"]
+G["**Run Simulation**<br/>Executes the manufacturing model using SimPy components such as DelayBuffer and Machine<br/>Returns metrics including throughput and wip"]
+H["**NSGA II Update**<br/>Applies selection and genetic operators SBX crossover and PM mutation to create a new population"]
+I["**Termination Check**<br/>If generation count reached stop else continue to evaluation"]
+J["**Export Results**<br/>Writes feasible solutions and KPIs to CSV using export_history_to_csv"]
+K["**End**<br/>Optimization finished and results stored"]
+A --> B
+B --> C
+C --> D
+D --> E
+E --> F
+F --> G
+G --> H
+H --> I
+I --> E
+I -->|finish| J
+J --> K

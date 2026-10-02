@@ -1,0 +1,27 @@
+flowchart TD
+Optimizer["**NSGA2 Optimizer**<br/>Coordinates the MOO run and search loop<br/>Configures NSGA2 algorithm and termination<br/>Calls BufferCapacityProblem and minimize"]
+BufferProblem["**BufferCapacityProblem Class**<br/>Decision problem wrapper for capacities<br/>Attributes: n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods: _evaluate prepares tasks and uses multiprocessing pool"]
+Multipool["**Multiprocessing Pool**<br/>Parallel evaluation engine<br/>Spawns worker processes to run evaluations in parallel"]
+Evaluator["**evaluate single individual**<br/>Maps a candidate to repeated simulations<br/>Inputs: caps list and n replications base seed warmup measure_until<br/>Returns: [avg_wip negative avg_throughput]"]
+DecisionVars["**Decision Variables**<br/>Six buffer capacities<br/>Each integer in {1-10}"]
+ObjectivesNode["**MOO Objectives**<br/>Objective 1 minimize average WIP<br/>Objective 2 maximize throughput implemented as minimize negative throughput"]
+SimWithCaps["**run simulation with caps**<br/>Builds simulation model using given caps<br/>Instantiates DelayBuffer and Machine objects<br/>Runs warmup and measurement and returns result dict with overall and machine_energy"]
+SimRun["**run simulation**<br/>Baseline simulation with fixed caps<br/>Used by debugging and single run experiments<br/>Returns same result structure as run simulation with caps"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes: env cap delay store tokens in_transit<br/>Methods: put delayed_put get _get_and_release free_capacity in_transit_count"]
+MachineClass["**Machine Class**<br/>Attributes: env name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource worker_processes stats is_up repair_event mtbf<br/>Methods: run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+Exporter["**Results Exporter**<br/>Exports optimization history to CSV<br/>Writes generation index individuals caps wip throughput to results file"]
+Pareto["**Pareto Front Result**<br/>Set of non dominated solutions discovered by optimizer<br/>Includes candidate caps and objective values"]
+
+Optimizer --> BufferProblem
+BufferProblem --> DecisionVars
+BufferProblem --> ObjectivesNode
+BufferProblem --> Multipool
+Multipool --> Evaluator
+Evaluator --> SimWithCaps
+SimWithCaps --> DelayBufferClass
+SimWithCaps --> MachineClass
+Evaluator --> SimRun
+BufferProblem --> Evaluator
+Optimizer --> Exporter
+Exporter --> Pareto
+Optimizer --> Pareto

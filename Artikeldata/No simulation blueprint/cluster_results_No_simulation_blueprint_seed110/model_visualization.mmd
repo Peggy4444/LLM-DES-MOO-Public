@@ -1,0 +1,45 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+Raw_Store["**Raw material\nsource**\nIA=6s\nCalendar controlled"]:::store
+LoadingRobot["**Loading robot**\nCT=12s\nAVB=90.49%\nMTTR=68s"]:::machine
+PostLoadingBuffer["**PostLoadingBuffer**\nCAP=2\nPT=10s"]:::buffer
+Conveyor["**Conveyor belt**\nCT=6s\nAVB=100%\nMTTR=1s"]:::machine
+PostConveyorBuffer["**PostConveyorBuffer**\nCAP=2\nPT=10s"]:::buffer
+WashingMachine["**Washing machine**\nCT=14s\nAVB=80.89%\nMTTR=269s"]:::machine
+PostWashingBuffer["**PostWashingBuffer**\nCAP=2\nPT=10s"]:::buffer
+HanteringCell["**Hantering cell**\nCT=25s\nAVB=97.79%\nMTTR=74s"]:::machine
+Splitter["**Presses\nsplitter**\nroute: even/odd"]:::helper
+PrePress1Buffer["**PrePress1Buffer**\nCAP=3\nPT=32s"]:::buffer
+PrePress2Buffer["**PrePress2Buffer**\nCAP=3\nPT=32s"]:::buffer
+Press1["**Presses cell 1**\nCT=175s\nAVB=87.79%\nMTTR=73s"]:::machine
+Press2["**Presses cell 2**\nCT=176s\nAVB=87.69%\nMTTR=74s"]:::machine
+PostPress12Buffer["**PostPress1&Press2Buffer**\nCAP=3\nPT=32s"]:::buffer
+Merger["**Presses\nmerger**"]:::helper
+QualityStation["**Quality station\ncell**\nCT=41s\nAVB=85.87%\nMTTR=66s"]:::machine
+DefectSink["**Defect\nsink**\nrate=8.9%"]:::defect
+FinishedSink["**Finished\nsink**"]:::sink
+
+Raw_Store --> LoadingRobot
+LoadingRobot --> PostLoadingBuffer
+PostLoadingBuffer --> Conveyor
+Conveyor --> PostConveyorBuffer
+PostConveyorBuffer --> WashingMachine
+WashingMachine --> PostWashingBuffer
+PostWashingBuffer --> HanteringCell
+HanteringCell --> Splitter
+Splitter -->|even id| PrePress1Buffer
+Splitter -->|odd id| PrePress2Buffer
+PrePress1Buffer --> Press1
+PrePress2Buffer --> Press2
+Press1 --> PostPress12Buffer
+Press2 --> PostPress12Buffer
+PostPress12Buffer --> Merger
+Merger --> QualityStation
+QualityStation -->|defect (8.9%)| DefectSink
+QualityStation -->|good (91.1%)| FinishedSink

@@ -1,0 +1,68 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+part_generator["**Part generator**\nRate=1s"]:::helper
+raw_input["**Raw input**\nStore\ncap=1000"]:::store
+part_generator --> raw_input
+
+loading_robot["**Loading robot**\nCT=12s\nAV=90.49%\nMTTR=68s"]:::machine
+raw_input --> loading_robot
+
+post_loading_buffer["**Post loading buffer**\nDelayBuffer\ncap=2\ndelay=10s"]:::buffer
+loading_robot --> post_loading_buffer
+
+conveyor_belt["**Conveyor belt**\nCT=6s\nAV=100%"]:::machine
+post_loading_buffer --> conveyor_belt
+
+post_conveyor_buffer["**Post conveyor buffer**\nDelayBuffer\ncap=2\ndelay=10s"]:::buffer
+conveyor_belt --> post_conveyor_buffer
+
+washing_machine["**Washing machine**\nCT=14s\nAV=80.89%\nMTTR=269s"]:::machine
+post_conveyor_buffer --> washing_machine
+
+post_washing_buffer["**Post washing buffer**\nDelayBuffer\ncap=2\ndelay=10s"]:::buffer
+washing_machine --> post_washing_buffer
+
+hantering_cell["**Hantering cell**\nCT=25s\nAV=97.79%\nMTTR=74s"]:::machine
+post_washing_buffer --> hantering_cell
+
+pre_press_split_buffer["**Pre-press split buffer**\nStore\ncap=6"]:::buffer
+hantering_cell --> pre_press_split_buffer
+
+splitter_node["**Splitter**\nRound-robin\ntoggle"]:::helper
+pre_press_split_buffer --> splitter_node
+
+pre_press1_buffer["**Pre-press1 buffer**\nDelayBuffer\ncap=3\ndelay=32s"]:::buffer
+pre_press2_buffer["**Pre-press2 buffer**\nDelayBuffer\ncap=3\ndelay=32s"]:::buffer
+splitter_node --> pre_press1_buffer
+splitter_node --> pre_press2_buffer
+
+presses_cell1["**Presses cell 1**\nCT=175s\nAV=87.79%\nMTTR=73s"]:::machine
+presses_cell2["**Presses cell 2**\nCT=176s\nAV=87.69%\nMTTR=74s"]:::machine
+pre_press1_buffer --> presses_cell1
+pre_press2_buffer --> presses_cell2
+
+press1_out["**Press1 out buffer**\nStore\ncap=3"]:::buffer
+press2_out["**Press2 out buffer**\nStore\ncap=3"]:::buffer
+presses_cell1 --> press1_out
+presses_cell2 --> press2_out
+
+merger_node["**Merger**\nCombine streams"]:::helper
+press1_out --> merger_node
+press2_out --> merger_node
+
+post_press12_buffer["**Post press12 buffer**\nDelayBuffer\ncap=3\ndelay=32s"]:::buffer
+merger_node --> post_press12_buffer
+
+quality_station["**Quality station cell**\nCT=41s\nAV=85.87%\nMTTR=66s\nDefect=8.9%"]:::machine
+post_press12_buffer --> quality_station
+
+sink_node["**Finished goods sink**\nStore\ncap=100000"]:::sink
+defects_node["**Defects sink**\nStore\ncap=100000"]:::defect
+quality_station --> sink_node
+quality_station -->|defect 8.9%| defects_node

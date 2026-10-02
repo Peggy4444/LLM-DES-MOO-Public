@@ -1,0 +1,51 @@
+flowchart TD
+SimulationModel["**Simulation Model**
+Constructs production system
+Runs simulation and returns KPIs throughput and wip"]
+DelayBuffer["**Delay Buffer**
+Attributes cap delay store tokens
+Methods put get in_transit_count free_capacity"]
+Machine["**Machine**
+Attributes name process time availability mttr power capacity metrics
+Methods run breakdown_cycle waiting_energy working_energy reset_stats"]
+RunSimCaps["**Run Simulation With Caps**
+Wrapper that builds model with provided buffer capacities
+Returns KPI dictionary for a run"]
+EvaluateInd["**Evaluate Single Individual**
+Runs multiple replications for one capacity vector
+Aggregates avg wip and avg throughput"]
+BufferProblem["**Buffer Capacity Problem**
+Decision variables 6 integer buffer caps {1-10}
+Evaluates population and produces objective values"]
+ParallelEval["**Parallel Evaluator**
+Uses multiprocessing Pool for parallel evaluation
+Maps individuals to Evaluate Single Individual"]
+NSGA2Opt["**NSGA II Optimizer**
+Configures sampling crossover mutation termination
+Minimizes Buffer Capacity Problem to produce Pareto set"]
+DecisionVars["**Decision Variables**
+Six buffer capacities
+Integer range {1-10} each"]
+Objectives["**Objectives**
+Minimize wip
+Maximize throughput implemented as negative objective"]
+CSVExporter["**CSV Exporter**
+Exports history of generations solutions and KPIs to CSV"]
+Main["**Main**
+Sets multiprocessing start method
+Runs optimizer and exports results"]
+
+SimulationModel --> Machine
+SimulationModel --> DelayBuffer
+RunSimCaps --> SimulationModel
+EvaluateInd --> RunSimCaps
+DecisionVars --> BufferProblem
+BufferProblem --> ParallelEval
+ParallelEval --> EvaluateInd
+EvaluateInd --> BufferProblem
+BufferProblem --> NSGA2Opt
+NSGA2Opt --> CSVExporter
+Main --> NSGA2Opt
+Main --> CSVExporter
+DecisionVars --> NSGA2Opt
+Objectives --> NSGA2Opt

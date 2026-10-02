@@ -1,0 +1,29 @@
+flowchart TD
+NSGA2_Controller["**NSGA2 Controller**<br/>Orchestrates MOO<br/>pop_size, n_gen sampling crossover mutation"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Decision variables 6 buffers<br/>xl {1-10} xu {1-10}<br/>n_replications base_seed n_cores<br/>_evaluate creates parallel tasks"]
+EvaluatorPool["**Evaluator Pool**<br/>multiprocessing Pool<br/>n_cores worker processes<br/>maps evaluate tasks"]
+EvaluateSingle["**evaluate_single_individual**<br/>Inputs caps n_replications base_seed<br/>runs replications sequentially<br/>returns [avg_wip negative_avg_throughput]"]
+RunWithCaps["**run_simulation_with_caps**<br/>Apply caps to BUFFERS_Global<br/>call run_replication for seed<br/>restore original caps"]
+RunReplication["**run_replication**<br/>seed RNG<br/>create simpy Environment<br/>instantiate ProductionSystem<br/>run until SIM_TIME<br/>finalize energy<br/>return throughput per hour mean_wip energy_per_part"]
+ProductionSystem["**ProductionSystem**<br/>Resources for stations<br/>Stores for buffers<br/>KPIs total_completed total_defects time_in_system area_wip<br/>methods inc_wip part_process source"]
+EnergyMeter["**EnergyMeter**<br/>energy per station map<br/>last_ts busy flags<br/>methods set_state finalize"]
+PartProcess["**part_process**<br/>flow: Loading Conveyor Washing Handling Press Quality<br/>uses wait_for_working_time<br/>updates KPIs WIP and energy_meter"]
+BUFFERS_Global["**BUFFERS Global**<br/>PostLoading PostConveyor PostWashing PrePress1 PrePress2 PostPress1and2<br/>capacities and buffer pt values"]
+Objectives["**Objectives**<br/>f1 average WIP minimize<br/>f2 throughput maximize stored as negative to minimize"]
+ExportCSV["**export_history_to_csv**<br/>traverse result history<br/>write generation individual caps wip throughput to CSV"]
+
+NSGA2_Controller --> BufferCapacityProblem
+BufferCapacityProblem --> EvaluatorPool
+EvaluatorPool --> EvaluateSingle
+EvaluateSingle --> RunWithCaps
+RunWithCaps --> BUFFERS_Global
+RunWithCaps --> RunReplication
+RunReplication --> ProductionSystem
+ProductionSystem --> EnergyMeter
+ProductionSystem --> PartProcess
+PartProcess --> ProductionSystem
+BufferCapacityProblem --> Objectives
+EvaluateSingle --> Objectives
+NSGA2_Controller --> ExportCSV
+ExportCSV --> Objectives
+BUFFERS_Global --> ProductionSystem

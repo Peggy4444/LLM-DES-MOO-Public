@@ -1,0 +1,28 @@
+flowchart TD
+Optimizer["**Optimizer Controller**<br/>pop_size 50<br/>n_gen 50<br/>n_replications 3<br/>n_cores 50<br/>methods setup_problem configure_algorithm run_optimization minimize"]
+BufferProblem["**Buffer Capacity Problem**<br/>n_var 6<br/>n_obj 2<br/>n_constr 1<br/>xl {1-10}<br/>xu {1-10}<br/>attributes n_replications base_seed n_cores<br/>methods _evaluate prepare_tasks"]
+NSGA2Alg["**NSGA2 Algorithm**<br/>sampling IntegerRandomSampling<br/>crossover SBX<br/>mutation PM<br/>attributes pop_size eliminate_duplicates<br/>methods evolve select crossover_mutate"]
+MultiprocPool["**Multiprocessing Pool**<br/>attributes processes n_cores<br/>methods map apply_async"]
+EvalIndividual["**Evaluate Individual**<br/>inputs decision_vector caps seed base_seed<br/>methods run_replications aggregate_results<br/>outputs F G"]
+SimRunner["**Simulation Runner**<br/>inputs caps seed warmup measure_until<br/>methods setup_env create_buffers create_machines run sample_wip compute_metrics<br/>outputs throughput wip result_dict"]
+MachineClass["**Machine Class**<br/>attributes name process_time availability mttr working_power waiting_power capacity<br/>methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+DelayBufferClass["**DelayBuffer Class**<br/>attributes cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"]
+History["**Optimization History**<br/>stores generations populations X F G<br/>method record_generation"]
+Exporter["**Results Exporter**<br/>methods export_history_to_csv write_csv filepath results_dir"]
+
+Optimizer -->|creates problem instance| BufferProblem
+Optimizer -->|configures algorithm| NSGA2Alg
+Optimizer -->|calls minimize loop| NSGA2Alg
+NSGA2Alg -->|during evaluation calls| BufferProblem
+BufferProblem -->|prepares tasks for pop| MultiprocPool
+MultiprocPool -->|maps tasks to workers| EvalIndividual
+EvalIndividual -->|calls multiple replications| SimRunner
+SimRunner -->|instantiates buffers| DelayBufferClass
+SimRunner -->|instantiates machines| MachineClass
+SimRunner -->|returns metrics throughput wip| EvalIndividual
+EvalIndividual -->|aggregates replications into F G| BufferProblem
+BufferProblem -->|returns F and G to algorithm| NSGA2Alg
+NSGA2Alg -->|records generation data| History
+Optimizer -->|on finish sends result| Exporter
+History -->|provides data to| Exporter
+Exporter -->|writes file| Optimizer

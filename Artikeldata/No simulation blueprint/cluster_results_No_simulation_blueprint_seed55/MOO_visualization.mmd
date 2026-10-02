@@ -1,0 +1,46 @@
+flowchart TD
+Start["**Start**<br/>Entry point running NSGA2 optimization"] 
+NSGA2["**NSGA2 Algorithm**<br/>Attributes: pop_size n_gen sampling crossover mutation<br/>Methods: run optimize select crossover mutate"] 
+ProblemClass["**BufferCapacityProblem Class**<br/>Attributes: n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods: _evaluate elementwise_evaluation constraint_sum_check"] 
+SamplingOperators["**Operators and Sampling**<br/>Sampling: IntegerRandomSampling<br/>Crossover: SBX<br/>Mutation: PM"] 
+Population["**Population Matrix X**<br/>Each individual x is 6 integer variables<br/>Domain for each variable {1-10}"] 
+ConstraintCheck["**Constraint Check**<br/>Total buffer capacity must be <= 50<br/>Infeasible individuals produce NaN objectives"] 
+EvaluateIndividual["**evaluate_single_individual**<br/>Input: decision vector x n_replications base_seed<br/>Output: objectives list wip and negative throughput"] 
+MultiprocessingPool["**Multiprocessing Pool**<br/>Attributes: n_processes fixed to 50<br/>Methods: map evaluate tasks in parallel"] 
+RunSims["**run_simulation_for_caps**<br/>Attributes: n_replications base_seed<br/>Methods: repeat _single_replication_with_caps aggregate mean wip mean throughput"] 
+SingleRep["**_single_replication_with_caps**<br/>Input: seed caps decision variables<br/>Methods: instantiate SimulationModel run until SIM_TIME compute KPIs throughput wip"] 
+SimulationModel["**Simulation Model**<br/>Attributes: SIM_TIME WARMUP REPS stats machines buffers<br/>Methods: run_replication source part_process wip_monitor collect_stats"] 
+MachineClass["**Machine Class**<br/>Attributes: name mean_proc availability mttr idle_energy work_energy resource mttf<br/>Methods: process_part (handles calendar failures repairs energy accounting)"] 
+BufferClass["**BufferWithDelay Class**<br/>Attributes: name capacity delay store<br/>Methods: put get (delay subject to working calendar)"] 
+PartProcess["**part_process Routine**<br/>Behavior: routing loading conveyor washing hantering press split quality defect check<br/>Interacts with Machine and Buffer classes"] 
+CollectResults["**Results Collector**<br/>Aggregates per replication KPIs<br/>Returns tuple avg_wip avg_throughput to evaluator"] 
+OutF["**Out F Matrix**<br/>Filled by BufferCapacityProblem._evaluate with objectives for each individual<br/>Format per individual f1 wip f2 negative throughput"] 
+History["**Optimization History**<br/>Saved populations per generation includes X and F for all feasible individuals"] 
+ExportCSV["**export_history_to_csv**<br/>Reads History writes results CSV results directory with feasible solutions and KPIs"] 
+End["**End**<br/>CSV exported and optimization finished"] 
+
+Start --> NSGA2
+NSGA2 --> Population
+NSGA2 --> SamplingOperators
+NSGA2 --> ProblemClass
+Population --> ProblemClass
+ProblemClass --> ConstraintCheck
+ConstraintCheck -->|feasible| EvaluateIndividual
+ConstraintCheck -->|infeasible| OutF
+EvaluateIndividual --> MultiprocessingPool
+MultiprocessingPool --> RunSims
+RunSims --> SingleRep
+SingleRep --> SimulationModel
+SimulationModel --> MachineClass
+SimulationModel --> BufferClass
+SimulationModel --> PartProcess
+PartProcess --> MachineClass
+PartProcess --> BufferClass
+SimulationModel --> CollectResults
+CollectResults --> RunSims
+RunSims --> EvaluateIndividual
+EvaluateIndividual --> OutF
+OutF --> History
+NSGA2 --> History
+History --> ExportCSV
+ExportCSV --> End

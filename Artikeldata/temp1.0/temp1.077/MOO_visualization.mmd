@@ -1,0 +1,32 @@
+flowchart TD
+Start["**Start**<br/>Initialize NSGA2 optimizer and problem setup"]
+ProblemClass["**BufferCapacityProblem**<br/>Class attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Method _evaluate runs parallel evaluation using Multiprocessing Pool"]
+NSGA2Node["**NSGA2 Algorithm**<br/>Configuration sampling SBX mutation PM pop_size n_gen eliminate_duplicates<br/>Calls minimize to evolve population using problem evaluations"]
+PopulationNode["**Population**<br/>Individuals are vectors of 6 integer buffer capacities in {1-10}<br/>Decision variables x0 x1 x2 x3 x4 x5"]
+Multipool["**Multiprocessing Pool**<br/>Parallel evaluation engine used by _evaluate<br/>Configured with n_cores workers"]
+EvaluateFunc["**evaluate_single_individual**<br/>Receives one individual and n_replications<br/>Aggregates per replication KPIs then returns objectives"]
+ConstraintNode["**constraint_function**<br/>Enforces structural constraints for feasibility<br/>Example rule pre press1 plus pre press2 greater or equal to 6"]
+NaNHandling["**Infeasible Handling**<br/>If constraint fails return NaN objectives<br/>Such individuals are excluded from CSV export"]
+RunSimCaps["**run_simulation_with_caps**<br/>Wrapper injects capacity vector into simulation<br/>Calls run_simulation and returns result dict"]
+RunSim["**run_simulation**<br/>SimPy production model builds DelayBuffers and Machines<br/>Samples WIP and throughput and returns KPI dictionary"]
+ObjectivesNode["**Objectives**<br/>Compute f1 average WIP to minimize<br/>Compute f2 negative average throughput to minimize"]
+ExportCSV["**export_history_to_csv**<br/>Writes feasible history rows to results CSV<br/>Skips individuals with NaN objectives"]
+End["**End**<br/>Final Pareto front returned and history exported"]
+
+Start --> ProblemClass
+ProblemClass --> NSGA2Node
+NSGA2Node --> PopulationNode
+PopulationNode --> ProblemClass
+ProblemClass --> Multipool
+Multipool --> EvaluateFunc
+EvaluateFunc --> ConstraintNode
+ConstraintNode --> NaNHandling
+ConstraintNode --> RunSimCaps
+RunSimCaps --> RunSim
+RunSim --> EvaluateFunc
+EvaluateFunc --> ProblemClass
+ProblemClass --> ObjectivesNode
+ObjectivesNode --> NSGA2Node
+NSGA2Node --> ExportCSV
+NaNHandling --> ExportCSV
+ExportCSV --> End

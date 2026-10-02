@@ -1,0 +1,33 @@
+flowchart TD
+Start["**Start**<br/>MOO optimization entry"]
+BufferProblem["**BufferCapacityProblem**<br/>Defines six integer decision variables<br/>Each capacity range {1-10}"]
+NSGA2Alg["**NSGA2 Algorithm**<br/>Generates and evolves population<br/>Uses SBX crossover and PM mutation"]
+Population["**Population**<br/>Set of candidate capacity vectors"]
+EvaluatePopulation["**Evaluate Population**<br/>BufferCapacityProblem _evaluate invoked by optimizer"]
+Multipool["**Multiprocessing Pool**<br/>Parallel map across n_cores for individuals"]
+EvalSingle["**evaluate_single_individual**<br/>Evaluates one individual across replications"]
+Feasibility["**Feasibility Check**<br/>All capacities integer and within {1-10}"]
+PenaltyReturn["**Penalty Return**<br/>Return large penalty objectives to skip simulation"]
+RunSimulation["**run_simulation**<br/>Builds sim environment using candidate caps<br/>Runs warmup and measurement replications"]
+DelayBufferClass["**DelayBuffer Class**<br/>Buffer cap and delay behavior<br/>Tracks in transit and ready items"]
+MachineClass["**Machine Class**<br/>Processing logic availability failures<br/>Collects working waiting blocked metrics"]
+AggregateMetrics["**Aggregate Metrics**<br/>Compute avg WIP and avg throughput across reps"]
+Objectives["**Return Objectives**<br/>Objective 1 minimize WIP<br/>Objective 2 minimize negative throughput"]
+UpdatePopulation["**NSGA2 Update**<br/>Assign fitness perform selection crossover mutation"]
+Termination["**Termination Check**<br/>Stop after configured number of generations"]
+ExportCSV["**Export CSV**<br/>export_history_to_csv writes population history and KPIs"]
+End["**End**<br/>Optimization complete with Pareto front"]
+
+Start --> BufferProblem --> NSGA2Alg --> Population --> EvaluatePopulation --> Multipool
+Multipool --> EvalSingle
+EvalSingle --> Feasibility
+Feasibility -- infeasible --> PenaltyReturn --> Objectives
+Feasibility -- feasible --> RunSimulation
+RunSimulation --> DelayBufferClass
+RunSimulation --> MachineClass
+RunSimulation --> AggregateMetrics --> Objectives
+Objectives --> MultipoolResults{"**Pool Collect Results**<br/>Gather objectives for population"}
+MultipoolResults --> UpdatePopulation
+UpdatePopulation --> Termination
+Termination -- not finished --> NSGA2Alg
+Termination -- finished --> ExportCSV --> End

@@ -1,0 +1,43 @@
+flowchart TD
+Start["**Start**<br/>Begin optimization"]
+InitOptimization["**Initialize Optimization**<br/>Set population size generations seed and cores"]
+CreateProblem["**Create Problem**<br/>Instantiate BufferCapacityProblem with 6 variables capacities {1-10} objectives wip min throughput max"]
+SamplingInit["**Sampling and Operators**<br/>Integer random sampling SBX crossover PM mutation setup"]
+StartGALoop["**Start GA Loop**<br/>Initialize population and generation counter"]
+EvaluatePopulation["**Evaluate Population**<br/>Call Problem._evaluate for current population"]
+PoolEvaluate["**Parallel Evaluation Pool**<br/>multiprocessing Pool of worker processes"]
+EvaluateIndividual["**Evaluate Individual**<br/>evaluate_single_individual runs multiple replications in sequence"]
+MooRunSimulation["**Run Simulation Instance**<br/>moo_run_simulation invoked with a capacity vector"]
+BuildSimpyModel["**Build Simpy Model**<br/>Instantiate DelayBuffer and Machine objects using capacity vector"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay tokens store methods put get free_capacity in_transit_count"]
+MachineClass["**Machine Class**<br/>Attributes process_time availability mttr working_power waiting_power capacity methods run waiting_energy working_energy"]
+RunSim["**Execute Simpy Run**<br/>Warmup reset stats sample WIP run until measure time"]
+CollectMetrics["**Collect Metrics**<br/>Compute throughput WIP produced parts and machine energy per replication"]
+AggregateReplications["**Aggregate Replications**<br/>Compute average WIP and average throughput across replications return objectives"]
+ReturnObjectives["**Return Objectives**<br/>Format objective vector with WIP minimize and negative throughput for maximization"]
+NSGA2Evolution["**NSGA2 Evolution**<br/>Selection crossover mutation and next population generation"]
+CheckTermination["**Check Termination**<br/>Stop when generation limit reached"]
+ExportHistoryCSV["**Export Results**<br/>Write history CSV with generation individual capacities WIP throughput"]
+End["**End**<br/>Optimization finished and results saved"]
+
+Start --> InitOptimization
+InitOptimization --> CreateProblem
+CreateProblem --> SamplingInit
+SamplingInit --> StartGALoop
+StartGALoop --> EvaluatePopulation
+EvaluatePopulation --> PoolEvaluate
+PoolEvaluate --> EvaluateIndividual
+EvaluateIndividual --> MooRunSimulation
+MooRunSimulation --> BuildSimpyModel
+BuildSimpyModel --> DelayBufferClass
+BuildSimpyModel --> MachineClass
+BuildSimpyModel --> RunSim
+RunSim --> CollectMetrics
+CollectMetrics --> AggregateReplications
+AggregateReplications --> ReturnObjectives
+ReturnObjectives --> EvaluatePopulation
+ReturnObjectives --> NSGA2Evolution
+NSGA2Evolution --> CheckTermination
+CheckTermination --> StartGALoop
+CheckTermination --> ExportHistoryCSV
+ExportHistoryCSV --> End

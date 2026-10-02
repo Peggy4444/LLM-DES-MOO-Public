@@ -1,0 +1,31 @@
+flowchart TD
+User["**User**<br/>Starts optimization run"]
+NSGA2Algorithm["**NSGA2Algorithm**<br/>Config<br/>pop_size user settable<br/>n_gen user settable<br/>Operators sampling crossover mutation<br/>Method<br/>minimize BufferCapacityProblem"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Attributes<br/>n_var 6<br/>xl vector {1-10}<br/>xu vector {1-10}<br/>n_replications replication count<br/>base_seed random seed<br/>Method<br/>_evaluate batch evaluate individuals"]
+InputVariables["**Input Variables**<br/>Buffer capacities caps 6 integers {1-10}"]
+MultiprocessingPool["**MultiprocessingPool**<br/>Parallel workers n_cores<br/>Maps tasks to workers using pool map"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual<br/>Converts genotype to caps<br/>Runs n replications sequentially<br/>Averages wip and throughput"]
+SimulationRunner["**SimulationRunner**<br/>run_simulation_with_caps<br/>Constructs buffers with caps<br/>Creates machines and processes<br/>Runs warmup and measurement<br/>Returns metrics overall throughput and wip"]
+DelayBufferClass["**DelayBuffer**<br/>Attributes cap delay tokens store<br/>Methods put get free_capacity in_transit_count"]
+MachineClass["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>Methods run waiting_energy_consumption working_energy_consumption"]
+MetricsCollector["**MetricsCollector**<br/>Aggregates replication results<br/>Computes average wip and average throughput<br/>Forms objective vector [wip negative throughput]"]
+Objectives["**Objectives**<br/>Minimize wip<br/>Maximize throughput"]
+NSGA2Archive["**NSGA2Archive**<br/>Maintains population and history<br/>Receives objective vectors and updates population"]
+Exporter["**Exporter**<br/>export_history_to_csv<br/>Serializes history to results CSV"]
+CSVFile["**CSVFile**<br/>Stored optimization history<br/>Fields generation individual caps wip throughput"]
+
+User --> NSGA2Algorithm
+NSGA2Algorithm --> BufferCapacityProblem
+BufferCapacityProblem --> InputVariables
+BufferCapacityProblem --> MultiprocessingPool
+MultiprocessingPool --> Evaluator
+Evaluator --> SimulationRunner
+SimulationRunner --> DelayBufferClass
+SimulationRunner --> MachineClass
+SimulationRunner --> MetricsCollector
+MetricsCollector --> Objectives
+MetricsCollector --> NSGA2Archive
+Objectives --> NSGA2Archive
+NSGA2Archive --> NSGA2Algorithm
+NSGA2Algorithm --> Exporter
+Exporter --> CSVFile

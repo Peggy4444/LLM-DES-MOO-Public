@@ -1,0 +1,42 @@
+flowchart TD
+Start["**MOO Optimization**<br/>Objectives wip min and throughput max"]
+InputVars["**Input Variables**<br/>Six buffer capacities decision variables with discrete range {1-10}"]
+BufferProblem["**BufferCapacityProblem**<br/>Defines MOO problem for capacities<br/>n_var 6 xl {1-10} xu {1-10} n_replications configurable"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>Population and generations control<br/>sampling integer random crossover SBX mutation PM"]
+Evaluator["_EvaluateNode"]["**Problem _evaluate**<br/>Builds tasks for each individual<br/>uses multiprocessing with n_cores 50"]
+MPPool["**Multiprocessing Pool**<br/>Parallel map of evaluate_single_individual<br/>manages worker processes"]
+EvaluateIndividual["**evaluate_single_individual**<br/>Runs multiple replications per individual<br/>aggregates avg wip and avg throughput as objectives"]
+RunWithCaps["**run_simulation_with_caps**<br/>Receives seed and capacity vector<br/>constructs DelayBuffer instances with decision caps<br/>builds machines and topology and runs simulation"]
+RunSim["**run_simulation**<br/>Core simulation engine used by both flows<br/>warmup sampling measurement collects throughput wip and per machine energy"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes env cap delay tokens store in_transit<br/>Methods put get free_capacity in_transit_count"]
+MachineClass["**Machine Class**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource stats is_up<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+Results["**Objective Results**<br/>Returns avg wip and negative avg throughput for pymoo<br/>per individual result fed back to NSGA2"]
+HistoryExport["**Export History CSV**<br/>Writes generation history with decision caps wip throughput to CSV file"]
+ManagerFlow["**Simulation Manager**<br/>part generation splitter merger sampling wip collection<br/>resets and aggregates machine stats"]
+
+Start --> InputVars
+InputVars --> BufferProblem
+BufferProblem --> NSGA2Algo
+NSGA2Algo --> Evaluator
+Evaluator --> MPPool
+MPPool --> EvaluateIndividual
+EvaluateIndividual --> RunWithCaps
+RunWithCaps --> RunSim
+RunSim --> DelayBufferClass
+RunSim --> MachineClass
+RunSim --> ManagerFlow
+RunSim --> Results
+Results --> NSGA2Algo
+NSGA2Algo --> HistoryExport
+
+DelayBufferClass ---|used by| RunWithCaps
+MachineClass ---|instantiated by| RunWithCaps
+ManagerFlow ---|orchestrates| RunSim
+MPPool ---|returns results to| Evaluator
+HistoryExport ---|consumes| NSGA2Algo
+
+style Start fill:#f9f,stroke:#333,stroke-width:1px
+style NSGA2Algo fill:#bbf,stroke:#333,stroke-width:1px
+style RunSim fill:#dfd,stroke:#333,stroke-width:1px
+style MachineClass fill:#ffd,stroke:#333,stroke-width:1px
+style DelayBufferClass fill:#ffd,stroke:#333,stroke-width:1px

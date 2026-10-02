@@ -1,0 +1,45 @@
+flowchart TD
+Start["**Start**<br/>User starts MOO optimization"]
+
+RunMOO["**Run MOO Optimization**<br/>Sets up problem and algorithm<br/>NSGA2 pop size 50<br/>Termination n_gen 50"]
+
+ProblemClass["**BufferOptimizationProblem**<br/>Attributes<br/>n_var 6<br/>xl xl xu xu bounds {1-10}<br/>n_obj 2<br/>Methods<br/>_evaluate x out seeds REPLICATIONS calls simulator"]
+
+NSGA2Config["**NSGA2 Algorithm**<br/>Attributes<br/>sampling IntegerRandomSampling<br/>crossover SBX prob 0.9<br/>mutation PM eta 20<br/>pop_size 50"]
+
+ParallelPool["**Parallel Pool**<br/>n_cores 50<br/>Uses multiprocessing Pool to evaluate candidates in parallel"]
+
+EvaluateIndividual["**evaluate_individual**<br/>Wrapper that constructs problem instance<br/>Calls problem underscore evaluate for a candidate x<br/>Returns objectives F"]
+
+RunSimWithCaps["**run_simulation_with_caps**<br/>Input variables caps six buffer capacities<br/>Seeds per replication<br/>Builds simpy environment and machines<br/>Returns result overall KPIs and machine energy"]
+
+DelayBufferClass["**DelayBuffer class**<br/>Attributes<br/>cap capacity<br/>delay delay seconds<br/>store tokens _in_transit<br/>Methods<br/>put part delayed put<br/>get returns part<br/>in_transit_count free_capacity"]
+
+MachineClass["**Machine class**<br/>Attributes<br/>name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource worker_processes<br/>Stats working_time failed_time_total wait_input_time blocked_time processed_count active_count window_wait_time last_reset is_up<br/>Methods<br/>run main process<br/>_breakdown_cycle schedules failures and repairs<br/>waiting_energy_consumption working_energy_consumption"]
+
+SimulatorFlow["**Simulation Flow**<br/>Part generator fills raw input<br/>Delay buffers link machines<br/>Splitters and mergers manage routing<br/>Sampling collects WIP every 600 seconds<br/>Warmup and measurement phases"]
+
+ObjectiveCalc["**Objective Calculation**<br/>From multiple replications compute mean_throughput mean_wip<br/>Objectives f1 minimize wip f2 minimize negative throughput"]
+
+NSGA2Loop["**Optimization Loop**<br/>NSGA2 evolves populations<br/>Uses evaluate_individual via Parallel Pool<br/>Saves history and Pareto approximations"]
+
+CollectResults["**Collect and Save Results**<br/>Traverse history generations<br/>Filter feasible solutions<br/>Write CSV results results moo simulation results csv"]
+
+End["**End**<br/>Optimization complete results saved"]
+
+Start --> RunMOO
+RunMOO --> ProblemClass
+RunMOO --> NSGA2Config
+RunMOO --> ParallelPool
+NSGA2Config --> NSGA2Loop
+ParallelPool --> NSGA2Loop
+NSGA2Loop --> EvaluateIndividual
+EvaluateIndividual --> ProblemClass
+ProblemClass --> RunSimWithCaps
+RunSimWithCaps --> DelayBufferClass
+RunSimWithCaps --> MachineClass
+RunSimWithCaps --> SimulatorFlow
+SimulatorFlow --> ObjectiveCalc
+ObjectiveCalc --> ProblemClass
+NSGA2Loop --> CollectResults
+CollectResults --> End

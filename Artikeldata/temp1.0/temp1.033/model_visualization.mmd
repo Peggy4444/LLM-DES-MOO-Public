@@ -1,0 +1,89 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+PartGenerator["**Part generator**
+Rate=1 part/s"]:::helper
+RawInput["**Raw input**
+Store cap=1000"]:::store
+LoadingRobot["**Loading robot**
+CT=12s
+Avail=90.49%"]:::machine
+PostLoadingBuffer["**PostLoadingBuffer**
+Delay=10s
+Cap=2"]:::buffer
+ConveyorBelt["**Conveyor belt**
+CT=6s
+Avail=100%"]:::machine
+PostConveyorBuffer["**PostConveyorBuffer**
+Delay=10s
+Cap=2"]:::buffer
+WashingMachine["**Washing machine**
+CT=14s
+Avail=80.89%"]:::machine
+PostWashingBuffer["**PostWashingBuffer**
+Delay=10s
+Cap=2"]:::buffer
+HanteringCell["**Hantering cell**
+CT=25s
+Avail=97.79%"]:::machine
+HanteringToSplit["**Hantering to split**
+Store cap=3"]:::buffer
+Splitter["**Splitter**
+Round-robin"]:::helper
+PrePress1Buffer["**PrePress1Buffer**
+Delay=32s
+Cap=3"]:::buffer
+PrePress2Buffer["**PrePress2Buffer**
+Delay=32s
+Cap=3"]:::buffer
+PressesCell1["**Presses cell 1**
+CT=175s
+Avail=87.79%"]:::machine
+Press1Out["**Press1_out**
+Store cap=3"]:::buffer
+PressesCell2["**Presses cell 2**
+CT=176s
+Avail=87.69%"]:::machine
+Press2Out["**Press2_out**
+Store cap=3"]:::buffer
+Merger["**Merger**
+Join press outputs"]:::helper
+PostPress12Buffer["**PostPress1&Press2Buffer**
+Delay=32s
+Cap=3"]:::buffer
+QualityStation["**Quality station cell**
+CT=41s
+Avail=85.87%
+DefectRate=8.9%"]:::machine
+FinishedSink["**Finished goods sink**
+Store cap=100000"]:::sink
+DefectsSink["**Defects sink**
+Store cap=100000"]:::defect
+
+PartGenerator --> RawInput
+RawInput --> LoadingRobot
+LoadingRobot --> PostLoadingBuffer
+PostLoadingBuffer --> ConveyorBelt
+ConveyorBelt --> PostConveyorBuffer
+PostConveyorBuffer --> WashingMachine
+WashingMachine --> PostWashingBuffer
+PostWashingBuffer --> HanteringCell
+HanteringCell --> HanteringToSplit
+HanteringToSplit --> Splitter
+Splitter --> PrePress1Buffer
+Splitter --> PrePress2Buffer
+PrePress1Buffer --> PressesCell1
+PressesCell1 --> Press1Out
+PrePress2Buffer --> PressesCell2
+PressesCell2 --> Press2Out
+Press1Out --> Merger
+Press2Out --> Merger
+Merger --> PostPress12Buffer
+PostPress12Buffer --> QualityStation
+QualityStation --> FinishedSink
+QualityStation --> DefectsSink

@@ -1,0 +1,4 @@
+post_loading_buffer_capacity,post_conveyor_buffer_capacity,post_washing_buffer_capacity,pre_press1_buffer_capacity,pre_press2_buffer_capacity,post_press12_buffer_capacity,throughput,wip
+1,1,1,2,2,1,27.21666666666667,13.154365079365078
+1,1,1,2,3,1,27.30952380952381,14.165277777777778
+2,1,1,2,3,9,27.326785714285712,15.190178571428572

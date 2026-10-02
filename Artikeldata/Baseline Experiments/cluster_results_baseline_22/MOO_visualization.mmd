@@ -1,0 +1,43 @@
+flowchart TD
+Optimizer["**MOO Optimizer**<br/>NSGA2 algorithm<br/>Objectives WIP min Throughput max"]
+ProblemClass["**BufferCapacityProblem**<br/>n_var 6<br/>xl {1-10} xu {1-10}<br/>n_replications base_seed n_cores"]
+InputVars["**Input Variables**<br/>Six buffer capacities<br/>each integer in {1-10}"]
+GenOperators["**Genetic Operators**<br/>Integer sampling<br/>SBX crossover PM mutation"]
+Population["**Population**<br/>pop size configurable<br/>generates candidate capacities"]
+NSGA2Runner["**NSGA2 Runner**<br/>run_nsga2_optimization<br/>calls minimize and evolves population"]
+EvaluatorPool["**Evaluator Pool**<br/>multiprocessing Pool<br/>parallel evaluate_single_individual"]
+MPConfig["**Multiprocessing Config**<br/>n_cores configurable<br/>spawn start method"]
+EvalFunction["**evaluate_single_individual**<br/>maps candidate to repeated simulations<br/>returns avg WIP and negative avg Throughput"]
+SimulationRunner["**Simulation Runner**<br/>run_simulation function<br/>warmup measure phases"]
+PartGenerator["**Part Generator**<br/>generates parts every second into raw input"]
+DelayBufferClass["**DelayBuffer**<br/>attributes cap delay store tokens<br/>methods put get free_capacity in_transit_count"]
+MachineClass["**Machine**<br/>attributes process_time availability mttr<br/>working_power waiting_power capacity<br/>methods run breakdown_cycle waiting_energy_consumption working_energy_consumption<br/>runtime stats working_time blocked_time wait_input_time processed_count"]
+SimulationOutputs["**Simulation Results**<br/>throughput WIP produced_parts machine_energy"]
+Aggregator["**Objective Aggregator**<br/>averages over replications<br/>produces two objectives WIP and negative Throughput"]
+CSVExport["**Results Exporter**<br/>export_history_to_csv<br/>writes CSV to results folder"]
+ManagerView["**Production Manager View**<br/>Pareto front of tradeoffs<br/>select candidate capacity configurations"]
+
+InputVars --> ProblemClass
+ProblemClass --> Population
+GenOperators --> NSGA2Runner
+Population --> NSGA2Runner
+ProblemClass --> NSGA2Runner
+NSGA2Runner --> EvaluatorPool
+MPConfig --> EvaluatorPool
+EvaluatorPool --> EvalFunction
+EvalFunction --> SimulationRunner
+SimulationRunner --> DelayBufferClass
+SimulationRunner --> MachineClass
+SimulationRunner --> PartGenerator
+PartGenerator --> DelayBufferClass
+DelayBufferClass --> MachineClass
+MachineClass --> SimulationOutputs
+SimulationRunner --> SimulationOutputs
+SimulationOutputs --> Aggregator
+Aggregator --> EvalFunction
+EvalFunction --> EvaluatorPool
+EvaluatorPool --> NSGA2Runner
+NSGA2Runner --> CSVExport
+NSGA2Runner --> ManagerView
+
+CSVExport --> ManagerView

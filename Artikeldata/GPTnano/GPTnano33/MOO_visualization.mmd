@@ -1,0 +1,11 @@
+flowchart TD
+moo_engine["**MOO Engine**<br/>Uses NSGA2 to optimize the buffer capacities for the production simulation"] --> buffer_problem
+buffer_problem["**BufferCapacityProblem**<br/>Attributes: n_var n_obj n_constr xl xu n_replications base_seed n_cores<br/>Methods: _evaluate"] --> decision_domain
+decision_domain["**DecisionVariableDomain**<br/>Capacities must be integers in {1-10}"] --> evaluation_worker
+evaluation_worker["**EvaluationWorker**<br/>Evaluates each candidate by running multiple replications and computing averages<br/>Calls SimulationRun for each candidate"] --> simulation_run
+simulation_run["**SimulationRun**<br/>Runs the production simulation for supplied caps and a seed"] --> evaluation_worker
+evaluation_worker --> nsga2
+nsga2["**NSGA2 Algorithm**<br/>Configures population sampling and operators to search for Pareto optimal buffers"] --> pareto_front
+pareto_front["**ParetoFront**<br/>Represents non dominated solutions with wip and throughput values"] --> history_exporter
+history_exporter["**ResultExporter**<br/>Exports generation history to csv for review"] --> optimization_result
+optimization_result["**OptimizationResult**<br/>Contains the Pareto front and history of runs"]

@@ -1,0 +1,42 @@
+flowchart TD
+Start["**Start MOO Run**<br/>User triggers optimization"] 
+RunNSGA2["**run_nsga2_optimization**<br/>Configures problem algorithm and termination"] 
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj n_replications base_seed n_cores<br/>Method _evaluate performs parallel fitness evaluation"] 
+NSGA2Algo["**NSGA2 Algorithm**<br/>Sampling crossover mutation eliminate duplicates<br/>Maintains population and history"] 
+Population["**Population**<br/>Collection of candidate solutions of size pop_size<br/>Decision variables are buffer capacities {1-10}"] 
+EvaluateIndividuals["**Evaluate Individuals**<br/>Create evaluation tasks for each candidate<br/>Each task contains caps and replication settings"] 
+MultiprocessingPool["**Parallel Evaluator**<br/>Uses multiprocessing Pool with exactly n_cores processes<br/>Maps tasks to worker processes"] 
+EvaluateSingle["**evaluate_single_individual**<br/>Runs n_replications of simulation per candidate<br/>Aggregates average throughput and average wip"] 
+RunSimMOO["**run_simulation_moo**<br/>Builds simpy environment using caps for DelayBuffer capacities<br/>Performs warmup sampling and measurement"] 
+SimComponents["**Simulation Components**<br/>Creates DelayBuffer and Machine instances and part generator<br/>Samples WIP and records produced parts"] 
+DelayBufferNode["**DelayBuffer**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get free_capacity in_transit_count"] 
+MachineNode["**Machine**<br/>Attributes working_time failed_time_total wait_input_time blocked_time processed_count active_count is_up<br/>Methods run waiting_energy_consumption working_energy_consumption reset_machine_stats"] 
+ComputeObjectives["**Compute Objectives**<br/>Compute throughput and avg wip from simulation results<br/>Return objectives as [wip negative_throughput] for minimizer"] 
+CollectResults["**Collect Results**<br/>Parallel evaluator gathers per candidate fitness vectors<br/>Returns results to BufferCapacityProblem _evaluate"] 
+UpdatePopulation["**Update Population**<br/>NSGA2 uses fitness to perform selection crossover mutation<br/>Generates next generation and appends to history"] 
+SaveHistory["**Save History**<br/>Algorithm stores population X F CV each generation<br/>History used for export and analysis"] 
+ExportHistory["**export_history_to_csv**<br/>Iterates history generations and writes feasible solutions to CSV<br/>Records decision variables and KPIs"] 
+End["**End**<br/>Optimization complete and results exported"] 
+
+Start --> RunNSGA2
+RunNSGA2 --> BufferProblem
+RunNSGA2 --> NSGA2Algo
+NSGA2Algo --> Population
+Population --> EvaluateIndividuals
+EvaluateIndividuals --> MultiprocessingPool
+MultiprocessingPool --> EvaluateSingle
+EvaluateSingle --> RunSimMOO
+RunSimMOO --> SimComponents
+SimComponents --> DelayBufferNode
+SimComponents --> MachineNode
+DelayBufferNode --> RunSimMOO
+MachineNode --> RunSimMOO
+RunSimMOO --> ComputeObjectives
+ComputeObjectives --> EvaluateSingle
+EvaluateSingle --> CollectResults
+CollectResults --> BufferProblem
+BufferProblem --> NSGA2Algo
+NSGA2Algo --> UpdatePopulation
+UpdatePopulation --> SaveHistory
+SaveHistory --> ExportHistory
+ExportHistory --> End

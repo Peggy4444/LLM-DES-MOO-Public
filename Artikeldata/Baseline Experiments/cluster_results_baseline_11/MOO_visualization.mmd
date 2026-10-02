@@ -1,0 +1,43 @@
+flowchart TD
+Start["**Start**<br/>Multi objective optimization flow"]
+DecisionVars["**Decision Variables**<br/>Six buffer capacities per run<br/>Discrete range {1-10}"]
+Objectives["**Objectives**<br/>Minimize WIP<br/>Maximize Throughput"]
+Problem["**BufferCapacityProblem**<br/>Attributes<br/>n_var 6<br/>n_obj 2<br/>xl array {1-10}<br/>xu array {1-10}<br/>n_replications base_seed n_cores<br/>Methods<br/>_evaluate evaluate population using multiprocessing pool"]
+NSGA2Alg["**NSGA2 Algorithm**<br/>Attributes<br/>pop_size n_gen sampling SBX mutation PM<br/>Methods<br/>run minimize problem and build history"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual function<br/>Inputs caps seed n_replications warmup measure_until<br/>Methods<br/>run replications call run_simulation_with_caps aggregate metrics"]
+RunSimCaps["**run_simulation_with_caps**<br/>Inputs caps seed warmup measure_until<br/>Methods<br/>build environment create DelayBuffers create Machines run warmup sample WIP return metrics dict"]
+DelayBufferClass["**DelayBuffer**<br/>Attributes<br/>cap delay store tokens in_transit<br/>Methods<br/>put delayed_put get get_and_release free_capacity in_transit_count"]
+MachineClass["**Machine**<br/>Attributes<br/>name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource stats repair_event is_up<br/>Methods<br/>run breakdown_cycle waiting_energy_consumption working_energy_consumption reset_machine_stats"]
+SimulationRunner["**Simulation Runner**<br/>run_simulation wrapper for baseline experiments<br/>Part generator WIP sampler warmup and measurement phases"]
+Exporter["**Results Exporter**<br/>export_history_to_csv<br/>Methods<br/>collect history iterate generations write CSV results"]
+Pool["**Multiprocessing Pool**<br/>Attributes<br/>processes n_cores<br/>Methods<br/>map evaluate tasks in parallel"]
+
+Start --> DecisionVars
+DecisionVars --> Problem
+Problem --> Objectives
+Problem --> NSGA2Alg
+NSGA2Alg --> Problem
+NSGA2Alg --> Pool
+Problem --> Pool
+Pool --> Evaluator
+Evaluator --> RunSimCaps
+RunSimCaps --> DelayBufferClass
+RunSimCaps --> MachineClass
+RunSimCaps --> SimulationRunner
+SimulationRunner --> MachineClass
+SimulationRunner --> DelayBufferClass
+Evaluator --> SimulationRunner
+Problem --> NSGA2Alg
+NSGA2Alg --> Exporter
+Exporter --> Start
+
+%% Interaction notes shown as flow nodes for clarity
+Interaction1["**Optimization Loop**<br/>Population generation evaluation selection crossover mutation"] 
+Interaction2["**Evaluation Result**<br/>Objective vector [avg WIP , -avg Throughput] returned to Problem"]
+Interaction3["**Design Decision**<br/>Adjusted capacities returned by algorithm as candidate solutions"]
+
+NSGA2Alg --> Interaction1
+Pool --> Interaction2
+Interaction2 --> Problem
+Problem --> Interaction3
+Interaction3 --> NSGA2Alg

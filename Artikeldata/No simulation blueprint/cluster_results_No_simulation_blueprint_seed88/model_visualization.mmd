@@ -1,0 +1,81 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+RawMaterial["**RawMaterial**
+ARR=60s"]:::store
+Loader["**Loader**
+PT=12s
+AVB=90.49%
+MTTR=68s"]:::machine
+PostLoading["**PostLoading**
+CAP=2
+PT=10s"]:::buffer
+Conveyor["**Conveyor**
+PT=6s
+AVB=100.00%"]:::machine
+PostConveyor["**PostConveyor**
+CAP=2
+PT=10s"]:::buffer
+Washer["**Washer**
+PT=14s
+AVB=80.89%
+MTTR=269s"]:::machine
+PostWashing["**PostWashing**
+CAP=2
+PT=10s"]:::buffer
+Handling["**Handling**
+PT=25s
+AVB=97.79%
+MTTR=74s"]:::machine
+PressRouter["**PressRouter**
+Split=50/50"]:::helper
+PrePress1["**PrePress1**
+CAP=3
+PT=32s"]:::buffer
+PrePress2["**PrePress2**
+CAP=3
+PT=32s"]:::buffer
+Press1["**Press1**
+PT=175s
+AVB=87.79%
+MTTR=73s"]:::machine
+Press2["**Press2**
+PT=176s
+AVB=87.69%
+MTTR=74s"]:::machine
+PostPresses["**PostPresses**
+CAP=3
+PT=32s"]:::buffer
+Quality["**Quality**
+PT=41s
+AVB=85.87%
+MTTR=66s"]:::machine
+DefectSink["**DefectSink**
+Scrap
+RATE=8.9%"]:::defect
+FinishedGoods["**FinishedGoods**
+Finished
+Sink"]:::sink
+
+RawMaterial --> Loader
+Loader --> PostLoading
+PostLoading --> Conveyor
+Conveyor --> PostConveyor
+PostConveyor --> Washer
+Washer --> PostWashing
+PostWashing --> Handling
+Handling --> PressRouter
+PressRouter -->|50%| PrePress1
+PressRouter -->|50%| PrePress2
+PrePress1 --> Press1
+PrePress2 --> Press2
+Press1 --> PostPresses
+Press2 --> PostPresses
+PostPresses --> Quality
+Quality -->|8.9%| DefectSink
+Quality -->|91.1%| FinishedGoods

@@ -1,0 +1,26 @@
+flowchart TD
+SimModel["**SimulationModel**<br/>Attributes: BUFFERS MACHINES SIM_TIME WARM_UP Methods: run_replication seed source part_flow returns throughput wip mean_energy_per_part"]
+MachineCls["**Machine**<br/>Attributes: name mean_proc availability mttr idle_energy work_energy up resource Methods: failure_process process _run_job"]
+BufferCls["**Buffer**<br/>Attributes: name capacity proc_time store Methods: put get_and_process"]
+Inputs["**Input Variables**<br/>Buffer capacities integers in {1-10}"]
+Objectives["**Objectives**<br/>Minimize wip Maximize throughput represented as negative throughput for minimizer"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes: buffer_names n_var n_replications base_seed xl xu Methods: _evaluate spawns multiprocessing pool to evaluate individuals and populate objective matrix"]
+Multipool["**MultiprocessingPool**<br/>Role: parallel evaluation of individuals across cores Executes EvaluateWorker tasks"]
+EvalWorker["**EvaluateWorker**<br/>Function evaluate_single_individual Inputs: candidate capacities n_replications base_seed Actions: set BUFFERS run repeated run_replication collect avg_wip avg_throughput Output: objectives wip and negative_throughput"]
+NSGA2Opt["**NSGA2Optimizer**<br/>Attributes: pop_size n_gen sampling crossover mutation algorithm termination Methods: run optimization minimize problem returns result and history"]
+Individual["**Individual**<br/>Attributes: genome capacities integers in {1-10} Fitness objectives wip throughput Methods: evaluated via EvaluateWorker"]
+Exporter["**ResultsExporter**<br/>Function export_history_to_csv Inputs: optimization result Writes CSV with generation individual_index buffer capacities wip throughput"]
+
+Inputs --> Individual
+Individual --> NSGA2Opt
+NSGA2Opt --> BufferProblem
+Objectives --> BufferProblem
+BufferProblem --> Multipool
+Multipool --> EvalWorker
+EvalWorker --> SimModel
+SimModel --> MachineCls
+SimModel --> BufferCls
+EvalWorker --> BufferProblem
+BufferProblem --> NSGA2Opt
+NSGA2Opt --> Exporter
+Exporter --> SimModel

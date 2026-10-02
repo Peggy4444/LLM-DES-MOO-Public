@@ -1,0 +1,50 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+Raw_Input["**Raw input**\nStore\nCap=1000"]:::store
+Loading_Robot["**Loading robot**\nCT=12s\nAVB=90.49%\nMTTR=68s"]:::machine
+PostLoadingBuffer["**PostLoadingBuffer**\nCap=2\nDelay=10s"]:::buffer
+Conveyor_Belt["**Conveyor belt**\nCT=6s\nAVB=100%"]:::machine
+PostConveyorBuffer["**PostConveyorBuffer**\nCap=2\nDelay=10s"]:::buffer
+Washing_Machine["**Washing machine**\nCT=14s\nAVB=80.89%\nMTTR=269s"]:::machine
+PostWashingBuffer["**PostWashingBuffer**\nCap=2\nDelay=10s"]:::buffer
+Hantering_Cell["**Hantering cell**\nCT=25s\nAVB=97.79%\nMTTR=74s"]:::machine
+PrePress_Split_Input["**PrePressSplitInput**\nStore\nCap=6"]:::buffer
+PrePress_Splitter["**PrePress splitter**\nEven split\nhonours capacity"]:::helper
+PrePress1Buffer["**PrePress1Buffer**\nCap=3\nDelay=32s"]:::buffer
+PrePress2Buffer["**PrePress2Buffer**\nCap=3\nDelay=32s"]:::buffer
+Presses_Cell_1["**Presses cell 1**\nCT=175s\nAVB=87.79%\nMTTR=73s"]:::machine
+Presses_Cell_2["**Presses cell 2**\nCT=176s\nAVB=87.69%\nMTTR=74s"]:::machine
+Press1_Out["**Press1Out**\nStore\nCap=3"]:::buffer
+Press2_Out["**Press2Out**\nStore\nCap=3"]:::buffer
+Presses_Merger["**Presses merger**\nMerge outputs"]:::helper
+PostPress12Buffer["**PostPress1&2 Buffer**\nCap=3\nDelay=32s"]:::buffer
+Quality_Station["**Quality station cell**\nCT=41s\nAVB=85.87%\nDefect≈8.9%"]:::machine
+Finished_Sink["**Finished sink**\nStore (finished goods)"]:::sink
+Defect_Sink["**Defect sink**\nScrap store"]:::defect
+
+Raw_Input --> Loading_Robot
+Loading_Robot --> PostLoadingBuffer
+PostLoadingBuffer --> Conveyor_Belt
+Conveyor_Belt --> PostConveyorBuffer
+PostConveyorBuffer --> Washing_Machine
+Washing_Machine --> PostWashingBuffer
+PostWashingBuffer --> Hantering_Cell
+Hantering_Cell --> PrePress_Split_Input
+PrePress_Split_Input --> PrePress_Splitter
+PrePress_Splitter -- "≈50/50" --> PrePress1Buffer
+PrePress_Splitter -- "≈50/50" --> PrePress2Buffer
+PrePress1Buffer --> Presses_Cell_1
+PrePress2Buffer --> Presses_Cell_2
+Presses_Cell_1 --> Press1_Out
+Presses_Cell_2 --> Press2_Out
+Press1_Out --> Presses_Merger
+Press2_Out --> Presses_Merger
+Presses_Merger --> PostPress12Buffer
+PostPress12Buffer --> Quality_Station
+Quality_Station -- "defect≈8.9%" --> Defect_Sink
+Quality_Station --> Finished_Sink

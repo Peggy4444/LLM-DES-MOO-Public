@@ -1,0 +1,49 @@
+flowchart TD
+RunNSGA2["**run_nsga2_optimization**<br/>Configures problem and algorithm<br/>Starts the MOO run"]
+NSGA2Alg["**NSGA II Algorithm**<br/>Population selection crossover mutation<br/>Eliminate duplicates"]
+SamplingCrossoverMutation["**Genetic Operators**<br/>Integer sampling SBX crossover PM mutation"]
+BufferProblem["**BufferCapacityProblem**<br/>Defines 6 decision variables<br/>Handles parallel evaluation and constraints"]
+DecisionVars["**Decision Variables**<br/>post_loading_buffer post_conveyor_buffer<br/>post_washing_buffer pre_press1_buffer<br/>pre_press2_buffer post_press12_buffer<br/>Each integer {1-10}"]
+MinimizeCall["**minimize call**<br/>Invokes pymoo minimize<br/>Saves history"]
+Pool["**Multiprocessing Pool**<br/>Runs evaluate tasks in parallel<br/>Uses n_cores processes"]
+EvaluateIndividual["**evaluate_single_individual**<br/>Runs n replications per design<br/>Returns avg WIP and negative avg throughput"]
+RunSimCaps["**run_simulation_with_caps**<br/>Builds model using capacities<br/>Runs warmup and measurement"]
+SimpyEnv["**simpy Environment**<br/>Schedules processes sampling and timeouts"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay tokens store<br/>Methods put get in_transit_count free_capacity"]
+MachineClass["**Machine Class**<br/>Attributes process_time availability mttr<br/>working_power waiting_power capacity<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+PartGenerator["**part_generator**<br/>Creates parts into raw input<br/>Rate one per second"]
+Metrics["**Objectives**<br/>WIP to minimize<br/>Throughput to maximize stored as negative objective"]
+Results["**Optimization Result**<br/>Pareto front and history object"]
+ExportCSV["**export_history_to_csv**<br/>Serializes feasible solutions from history<br/>Writes KPIs and capacities to CSV"]
+
+RunNSGA2 --> BufferProblem
+RunNSGA2 --> NSGA2Alg
+RunNSGA2 --> SamplingCrossoverMutation
+RunNSGA2 --> MinimizeCall
+
+NSGA2Alg --> MinimizeCall
+SamplingCrossoverMutation --> NSGA2Alg
+
+MinimizeCall --> BufferProblem
+MinimizeCall --> Results
+
+BufferProblem --> DecisionVars
+BufferProblem --> Pool
+Pool --> EvaluateIndividual
+EvaluateIndividual --> RunSimCaps
+RunSimCaps --> SimpyEnv
+SimpyEnv --> DelayBufferClass
+SimpyEnv --> MachineClass
+SimpyEnv --> PartGenerator
+
+DelayBufferClass --> RunSimCaps
+MachineClass --> RunSimCaps
+PartGenerator --> RunSimCaps
+
+RunSimCaps --> Metrics
+EvaluateIndividual --> Metrics
+Metrics --> BufferProblem
+
+MinimizeCall --> Results
+Results --> ExportCSV
+ExportCSV --> Results

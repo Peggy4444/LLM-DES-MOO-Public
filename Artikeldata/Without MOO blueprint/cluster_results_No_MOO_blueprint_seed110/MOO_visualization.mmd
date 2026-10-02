@@ -1,0 +1,57 @@
+flowchart TD
+RunOptimization["**Run Optimization**<br/>
+Main entry that configures NSGA2 and orchestrates optimization"]
+NSGA2_Algorithm["**NSGA2 Algorithm**<br/>
+Population based MOO engine running generations"]
+ProductionLineProblem["**Production Line Problem**<br/>
+Problem wrapper implementing _evaluate for NSGA2"]
+InputVars["**Input Variables**<br/>
+Six buffer capacities discrete {1-10} supplied to evaluations"]
+EvaluateDesign["**Evaluate Design**<br/>
+Transforms candidate vector into repeated simulations and aggregates results"]
+ParallelPool["**Parallel Pool**<br/>
+Optional multiprocessing pool used to parallelize design evaluations"]
+RunSimulation["**Run Simulation**<br/>
+SimPy based production simulation run with given capacities and seed"]
+DelayBuffer["**Delay Buffer**<br/>
+Buffer model tracking capacity tokens in transit and ready items"]
+Machine["**Machine**<br/>
+Event driven machine with failure cycles stats and energy accounting"]
+PartGenerator["**Part Generator**<br/>
+Produces parts into raw input stream at fixed intervals"]
+WipSampler["**WIP Sampler**<br/>
+Periodic sampler computing instantaneous work in progress"]
+Metrics["**Metrics**<br/>
+Computes throughput produced parts and average WIP per run"]
+ReturnObjectives["**Return Objectives**<br/>
+Mean WIP and negated mean throughput returned to Problem"]
+HistoryCollector["**History Collector**<br/>
+Collects population history and Pareto candidates from optimization"]
+ResultsSaver["**Results Saver**<br/>
+Converts final and historical solutions to CSV in results directory"]
+Objectives["**Objectives**<br/>
+Minimize WIP and maximize throughput"]
+
+RunOptimization --> NSGA2_Algorithm
+RunOptimization --> ResultsSaver
+NSGA2_Algorithm --> ProductionLineProblem
+NSGA2_Algorithm --> ParallelPool
+NSGA2_Algorithm --> HistoryCollector
+ProductionLineProblem --> InputVars
+InputVars --> EvaluateDesign
+ProductionLineProblem --> EvaluateDesign
+EvaluateDesign --> ParallelPool
+ParallelPool --> RunSimulation
+EvaluateDesign --> RunSimulation
+RunSimulation --> DelayBuffer
+RunSimulation --> Machine
+RunSimulation --> PartGenerator
+RunSimulation --> WipSampler
+WipSampler --> Metrics
+Machine --> Metrics
+DelayBuffer --> Metrics
+Metrics --> ReturnObjectives
+ReturnObjectives --> ProductionLineProblem
+HistoryCollector --> ResultsSaver
+NSGA2_Algorithm --> HistoryCollector
+ResultsSaver --> Objectives

@@ -1,0 +1,32 @@
+flowchart TD
+Problem["**BufferCapacityProblem**<br/>MOO problem class for buffer caps<br/>Attributes: n_var 6 xl {1-10} xu {1-10} n_replications base_seed n_cores<br/>Methods: _evaluate receives population X and produces objective matrix F"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>Sets population sampling crossover mutation<br/>Runs optimization loop and queries Problem._evaluate<br/>Produces result history and Pareto front"]
+ParallelPool["**Parallel Executor**<br/>Multiprocessing pool used by Problem._evaluate<br/>Maps evaluate single individuals in parallel to worker processes"]
+EvaluateInd["**evaluate_single_individual**<br/>Worker function for one individual X<br/>Runs n replications with different seeds<br/>Returns objectives [avg WIP, negative avg throughput]"]
+RunSimCaps["**run_simulation_with_caps**<br/>Builds simpy environment with given buffer capacities<br/>Creates Machines and DelayBuffers using caps<br/>Runs warmup then measurement and returns metrics dict"]
+RunSim["**run_simulation**<br/>Core simulation run used by worker<br/>Simulates machines buffers part generator sampling wip and throughput<br/>Returns overall metrics and per machine energy"]
+Machine["**Machine**<br/>Simpy driven machine entity<br/>Attributes: name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>Methods: run breakdown cycle reset stats working energy waiting energy"]
+DelayBuffer["**DelayBuffer**<br/>Buffer with capacity and in transit tokens<br/>Attributes: cap delay store tokens in_transit<br/>Methods: put get free_capacity in_transit_count"]
+Inputs["**Input Variables**<br/>Six buffer capacities to optimize<br/>Each integer in {1-10}"]
+Objectives["**Objectives**<br/>f1 average WIP minimize<br/>f2 throughput maximize (handled as negative for minimization)"]
+Results["**Optimization Result**<br/>Pareto front and history of evaluated individuals<br/>Contains population X F over generations"]
+ExportCSV["**export_history_to_csv**<br/>Writes generation level population X and F to CSV file in results directory"]
+Main["**Main**<br/>Entry point runs run_nsga2_optimization then export_history_to_csv"]
+
+Problem -->|uses| ParallelPool
+Problem -->|evaluates via| EvaluateInd
+EvaluateInd -->|calls| RunSimCaps
+RunSimCaps -->|calls many times| RunSim
+RunSim -->|instantiates| Machine
+RunSim -->|instantiates| DelayBuffer
+NSGA2Algo -->|queries| Problem
+NSGA2Algo -->|produces| Results
+ParallelPool -->|maps to| EvaluateInd
+Inputs -->|decision vector fed to| Problem
+Objectives -->|minimize target| Problem
+Results -->|exported by| ExportCSV
+Main -->|starts| NSGA2Algo
+Main -->|then calls| ExportCSV
+NSGA2Algo -->|outputs| Results
+Machine -->|provides metrics to| RunSim
+DelayBuffer -->|buffers parts for| Machine

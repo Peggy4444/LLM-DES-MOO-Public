@@ -1,0 +1,26 @@
+flowchart TD
+Start["**Start**<br/>Launch optimization script"]
+MainRun["**Main**<br/>Set multiprocessing start method<br/>Call run_nsga2_optimization<br/>Call export_history_to_csv"]
+NSGA2Node["**NSGA2 Optimizer**<br/>Config population size and generations<br/>Sampling crossover mutation<br/>Calls minimize with Problem and Algorithm"]
+ProblemNode["**BufferCapacityProblem**<br/>Attributes<br/>n_var 6<br/>n_obj 2<br/>xl and xu ranges {1-10}<br/>n_replications base_seed n_cores<br/>Methods<br/>_evaluate evaluates batch of candidates in parallel"]
+EvalPool["**Evaluator Pool**<br/>Creates multiprocessing Pool with n_cores<br/>Maps evaluate_single_individual over tasks"]
+EvalIndividual["**Evaluate Individual**<br/>Inputs candidate capacities vector<br/>Repeats n_replications with varied seeds<br/>Calls Simulation Runner for each replication<br/>Averages metrics and returns [avg_wip, -avg_throughput]"]
+SimRunner["**Simulation Runner**<br/>run_simulation_with_caps builds simpy model<br/>Instantiates DelayBuffer objects with candidate capacities<br/>Creates Machine instances and links buffers<br/>Runs warmup then measurement<br/>Samples wip throughput and per machine energy<br/>Returns metrics dict"]
+DelayBufferClass["**DelayBuffer**<br/>Attributes<br/>cap capacity<br/>delay transport delay<br/>Internal tokens and store<br/>Methods<br/>put delayed_put<br/>get get_and_release<br/>in_transit_count free_capacity items"]
+MachineClass["**Machine**<br/>Attributes<br/>input_buffer output_buffer process_time availability mttr working_power waiting_power defect_rate capacity<br/>State and stats<br/>working_time failed_time_total wait_input_time blocked_time processed_count window_wait_time is_up<br/>Methods<br/>run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+InputVars["**Input Variables**<br/>Six buffer capacities<br/>Each integer in {1-10}"]
+Objectives["**Objectives**<br/>Minimize wip<br/>Maximize throughput represented as minimize negative throughput"]
+HistoryExport["**History Export**<br/>export_history_to_csv<br/>Reads result history from optimizer<br/>Writes CSV rows with generation individual capacities wip throughput"]
+
+Start --> MainRun
+MainRun --> NSGA2Node
+NSGA2Node --> ProblemNode
+ProblemNode --> EvalPool
+EvalPool --> EvalIndividual
+EvalIndividual --> SimRunner
+SimRunner --> DelayBufferClass
+SimRunner --> MachineClass
+ProblemNode --> InputVars
+NSGA2Node --> Objectives
+MainRun --> HistoryExport
+HistoryExport --> MainRun

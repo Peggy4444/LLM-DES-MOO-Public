@@ -1,0 +1,44 @@
+flowchart TD
+StartNode["**Start**<br/>Initialize MOO run"]
+
+ProblemDef["**Problem Definition**<br/>Objectives Minimize WIP and<br/>Maximize Throughput<br/>Inputs Six buffer capacities {1-10}"]
+
+PopulationInit["**Population Initialization**<br/>POP SIZE 50<br/>Generate individuals with<br/>capacities that satisfy sum <= 30"]
+
+EvalPool["**Evaluation Worker Pool**<br/>Parallel pool using N CORES 50<br/>Maps population to evaluate individual"]
+
+EvaluateIndividual["**Evaluate Individual**<br/>Runs simulation for 3 seeds<br/>Returns averaged WIP and negative throughput<br/>Returns None for infeasible individuals"]
+
+SimulationModel["**Production Simulation Model**<br/>Existing simpy model run_simulation<br/>Inputs buffer capacities vector<br/>Outputs throughput WIP and machine energy"]
+
+GatherResults["**Gather Results**<br/>Collect evaluation outputs<br/>Filter infeasible individuals<br/>Append valid results to CSV"]
+
+NonDominatedSort["**Non Dominated Sort**<br/>fast non dominated sort<br/>Computes Pareto fronts and ranks"]
+
+CrowdingDist["**Crowding Distance**<br/>Compute distance inside front<br/>Used to prefer diverse solutions"]
+
+Replacement["**Population Replacement**<br/>Form new population from Pareto fronts<br/>Use crowding to trim to POP SIZE"]
+
+SelectionReproduction["**Selection and Reproduction**<br/>Tournament selection<br/>Crossover and Mutation<br/>Create offspring population"]
+
+ConstraintHandler["**Constraint Handler**<br/>Enforce sum capacities <= 30<br/>If no feasible individuals reinitialize population"]
+
+ResultsOutput["**Results Output**<br/>Write generation results to results CSV<br/>Close worker pool at end of optimization"]
+
+EndNode["**End**<br/>Optimization complete<br/>Pareto set and CSV available"]
+
+StartNode --> ProblemDef
+ProblemDef --> PopulationInit
+PopulationInit --> EvalPool
+EvalPool --> EvaluateIndividual
+EvaluateIndividual --> SimulationModel
+SimulationModel --> EvaluateIndividual
+EvaluateIndividual --> GatherResults
+GatherResults --> NonDominatedSort
+NonDominatedSort --> CrowdingDist
+CrowdingDist --> Replacement
+Replacement --> SelectionReproduction
+SelectionReproduction --> ConstraintHandler
+ConstraintHandler --> EvalPool
+Replacement -->|If final generation reached| ResultsOutput
+ResultsOutput --> EndNode

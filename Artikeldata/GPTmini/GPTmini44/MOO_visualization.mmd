@@ -1,0 +1,32 @@
+flowchart TD
+SimulationModule["**Simulation Module**<br/>Contains Machine DelayBuffer part_generator sampling WIP and energy metrics"]
+RunSimulation["**Run Simulation**<br/>Function run_simulation seed caps warmup measure_until returns throughput WIP and machine_energy"]
+EvaluateIndividual["**Evaluate Individual**<br/>evaluate_single_individual runs n_replications of Run Simulation and returns avg WIP and negative throughput"]
+BufferProblem["**Buffer Capacity Problem**<br/>Pymoo Problem class BufferCapacityProblem prepares X checks feasibility computes F and G"]
+MultiprocPool["**Multiprocessing Pool**<br/>Spawns exactly 50 processes to evaluate feasible individuals in parallel"]
+NSGA2Algorithm["**NSGA II Algorithm**<br/>Configures sampling crossover mutation population and calls Problem _evaluate"]
+RunNSGA2["**Run NSGA II Optimization**<br/>Sets pop_size n_gen n_replications base_seed warmup and returns result history"]
+ExportHistory["**Export History**<br/>export_history_to_csv writes feasible solutions and KPIs to results CSV file"]
+DecisionVariables["**Decision Variables**<br/>Six buffer capacities for delay buffers values {1-10} integers"]
+Objectives["**Objectives**<br/>Minimize WIP and minimize negative throughput to maximize throughput"]
+Constraints["**Constraints**<br/>All variables must be integer and in range {1-10} infeasible individuals marked G greater than 0"]
+Parameters["**Parameters**<br/>pop_size 50 n_gen 50 n_replications 3 base_seed RANDOM_SEED n_cores 50 warmup MEASURE_UNTIL"]
+
+DecisionVariables --> BufferProblem
+Objectives --> BufferProblem
+Constraints --> BufferProblem
+Parameters --> RunNSGA2
+RunNSGA2 --> NSGA2Algorithm
+NSGA2Algorithm --> BufferProblem
+BufferProblem --> MultiprocPool
+MultiprocPool --> EvaluateIndividual
+EvaluateIndividual --> RunSimulation
+RunSimulation --> SimulationModule
+SimulationModule --> RunSimulation
+EvaluateIndividual --> BufferProblem
+BufferProblem --> NSGA2Algorithm
+NSGA2Algorithm --> RunNSGA2
+RunNSGA2 --> ExportHistory
+ExportHistory --> RunNSGA2
+RunNSGA2 --> Results["**Optimization Results**<br/>Pareto front final population and CSV path"]
+ExportHistory --> Results

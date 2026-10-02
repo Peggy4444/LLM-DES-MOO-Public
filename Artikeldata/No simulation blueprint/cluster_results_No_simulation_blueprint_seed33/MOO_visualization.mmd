@@ -1,0 +1,28 @@
+flowchart TD
+Start["**Start**<br/>Run MOO optimization"]
+BufferCapacityProblemClass["**BufferCapacityProblem**<br/>Decision variables x0..x5 capacities {1-10}<br/>Attributes n_replications n_cores base_seed<br/>Method _evaluate uses parallel evaluation"]
+NSGA2_Algorithm["**NSGA2 Algorithm**<br/>Sampling IntegerRandomSampling<br/>Crossover SBX<br/>Mutation PM<br/>Termination by number of generations<br/>Method minimize returns result history"]
+PopulationNode["**Population**<br/>pop size individuals<br/>Each individual vector x of 6 ints"]
+MultiprocessingPoolNode["**Multiprocessing Pool**<br/>Uses n cores to map evaluation tasks in parallel"]
+EvaluateIndividualNode["**evaluate_single_individual**<br/>Runs n replications per individual<br/>Uses local RNG for decorrelation<br/>Collects throughputs and wips<br/>Returns objectives f1 average wip min f2 negative avg throughput"]
+RunSimulationNode["**run_simulation**<br/>Inputs caps six ints {1-10}<br/>Overrides buffer capacities in system<br/>Runs simulation until SIM_TIME<br/>Outputs throughput wip produced_parts"]
+ProductionSystemClass["**ProductionSystem**<br/>Attributes interarrival wip throughput_count defect_count completed_parts<br/>Components loading_robot conveyor washing hantering press1 press2 quality<br/>Buffers post_loading post_conveyor post_washing pre_press1 pre_press2 post_press<br/>Methods source part_flow wip_tracker change_wip"]
+MachineClass["**Machine**<br/>Attributes avg_time mtbf mttr energy_idle energy_work resource working processes energy_integral last_load last_state_change<br/>Methods process_part breakdown_process energy_tracker set_load _do_processing calc_mtbf"]
+BufferWithTimeClass["**BufferWithTime**<br/>Attributes capacity proc_time store energy_idle energy_work energy_integral last_load last_state_change<br/>Methods put get hold energy_tracker set_load"]
+ResultAggregationNode["**Result Aggregation**<br/>Aggregate replication results<br/>Compute avg_wip avg_throughput<br/>Return objective vector to NSGA2"]
+ExportCSVNode["**export_history_to_csv**<br/>Input optimization result history<br/>Writes CSV with generation index individual capacities wip throughput"]
+End["**End**<br/>Optimization complete and results exported"]
+
+Start --> BufferCapacityProblemClass
+BufferCapacityProblemClass --> NSGA2_Algorithm
+NSGA2_Algorithm --> PopulationNode
+PopulationNode --> MultiprocessingPoolNode
+MultiprocessingPoolNode --> EvaluateIndividualNode
+EvaluateIndividualNode --> RunSimulationNode
+RunSimulationNode --> ProductionSystemClass
+ProductionSystemClass --> MachineClass
+ProductionSystemClass --> BufferWithTimeClass
+RunSimulationNode --> ResultAggregationNode
+ResultAggregationNode --> NSGA2_Algorithm
+NSGA2_Algorithm --> ExportCSVNode
+ExportCSVNode --> End

@@ -1,0 +1,41 @@
+flowchart TD
+Start["**Start**<br/>Begin NSGA2 MOO"]
+InputVars["**Input Variables**<br/>Six buffer capacities {1-10} integer"]
+Objectives["**Objectives**<br/>Minimize WIP and Maximize Throughput"]
+Problem["**BufferCapacityProblem**<br/>Defines decision space and evaluation interface"]
+Algorithm["**NSGA2 Algorithm**<br/>Sampling crossover mutation generations"]
+Population["**Population**<br/>Collection of capacity vectors"]
+Evaluate["**Evaluate Population**<br/>Create parallel tasks for individuals"]
+MP["**Multiprocessing Pool**<br/>Execute evaluate tasks across n_cores"]
+EvalSingle["**evaluate single individual**<br/>Run replications and aggregate KPIs"]
+RunSimCaps["**run simulation with caps**<br/>Build simpy model with given buffer capacities"]
+RunSim["**run simulation**<br/>SimPy execution during warmup and measure window"]
+Machine["**Machine and DelayBuffer**<br/>Machine events availability failures and buffer tokens"]
+SampleWIP["**WIP Sampling**<br/>Periodic measurement of ready in transit and in machines"]
+ComputeObj["**Compute Objectives**<br/>Average WIP and Average Throughput per individual"]
+Constraint["**Feasibility Check**<br/>Penalize individuals with zero production"]
+Selection["**Selection and Archive**<br/>NSGA2 non dominated sorting and next generation"]
+Termination["**Termination**<br/>Stop after configured number of generations"]
+Export["**Export CSV**<br/>Write feasible solutions and KPIs from history"]
+End["**End**<br/>Return Pareto front and CSV file"]
+
+Start --> Problem
+InputVars --> Problem
+Objectives --> Problem
+Problem --> Algorithm
+Algorithm --> Population
+Population --> Evaluate
+Evaluate --> MP
+MP --> EvalSingle
+EvalSingle --> RunSimCaps
+RunSimCaps --> RunSim
+RunSim --> Machine
+RunSim --> SampleWIP
+RunSim --> EvalSingle
+EvalSingle --> ComputeObj
+ComputeObj --> Constraint
+Constraint --> Selection
+Selection --> Population
+Selection --> Termination
+Termination --> Export
+Export --> End

@@ -1,0 +1,39 @@
+flowchart TD
+StartNode["**Start**<br/>Initiate NSGA2 optimization"]
+NSGA2Node["**NSGA2 Optimizer**<br/>attrs pop_size n_gen seed verbose<br/>method run_nsga2_optimization"]
+ProblemNode["**BufferCapacityProblem**<br/>attrs n_var n_obj xl xu n_replications base_seed n_cores<br/>method _evaluate"]
+SamplingNode["**Sampling Strategy**<br/>IntegerRandomSampling"]
+GeneticOpsNode["**Genetic Operators**<br/>SBX crossover PM mutation"]
+PopulationNode["**Population**<br/>pop of individuals X and fitness F<br/>history saved"]
+IndividualNode["**Individual**<br/>6 buffer capacities<br/>each in {1-10}"]
+PoolNode["**Multiprocessing Pool**<br/>processes 50<br/>map evaluate_single_individual"]
+EvaluateNode["**evaluate_single_individual**<br/>inputs caps n_replications base_seed warmup measure_until<br/>method evaluate across replications"]
+SimBuilderNode["**Simulation Runner**<br/>run_simulation_with_caps builds env and machines<br/>applies caps to DelayBuffer capacities"]
+SimNode["**Simulation**<br/>run_simulation executes simpy env<br/>warmup sampling measure until collect metrics"]
+DelayBufferNode["**DelayBuffer Class**<br/>attrs cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"]
+MachineNode["**Machine Class**<br/>attrs name input_buffer output_buffer process_time availability mttr working_power waiting_power defect_rate capacity<br/>methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+ResultsNode["**Evaluation Result**<br/>avg_wip avg_throughput per individual<br/>returned to Problem as objectives"]
+ObjectiveNode["**Objectives**<br/>Minimize wip<br/>Maximize throughput represented as negative throughput"]
+ExportNode["**Exporter**<br/>export_history_to_csv writes generation records to CSV in results directory"]
+EndNode["**End**<br/>Optimization complete and results exported"]
+
+StartNode --> NSGA2Node
+NSGA2Node --> ProblemNode
+NSGA2Node --> SamplingNode
+NSGA2Node --> GeneticOpsNode
+NSGA2Node --> PopulationNode
+PopulationNode --> IndividualNode
+IndividualNode --> ProblemNode
+ProblemNode --> PoolNode
+PoolNode --> EvaluateNode
+EvaluateNode --> SimBuilderNode
+SimBuilderNode --> DelayBufferNode
+SimBuilderNode --> MachineNode
+SimBuilderNode --> SimNode
+SimNode --> ResultsNode
+ResultsNode --> ProblemNode
+ResultsNode --> ObjectiveNode
+ProblemNode --> PopulationNode
+PopulationNode --> NSGA2Node
+NSGA2Node --> ExportNode
+ExportNode --> EndNode

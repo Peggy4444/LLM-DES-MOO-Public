@@ -1,0 +1,4 @@
+PostLoadingBuffer_capacity,PostConveyorBuffer_capacity,PostWashingBuffer_capacity,PrePress1Buffer_capacity,PrePress2Buffer_capacity,PostPress1AndPress2Buffer_capacity,wip,throughput
+10,8,6,4,10,7,7055.326467013889,28.699404761904763
+1,1,6,5,1,7,7062.099357638889,28.96845238095238
+1,1,6,5,1,2,7081.32140625,29.082142857142856

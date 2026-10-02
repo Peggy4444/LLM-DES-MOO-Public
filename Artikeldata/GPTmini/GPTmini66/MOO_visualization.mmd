@@ -1,0 +1,31 @@
+flowchart TD
+Input_Variables["**Input Variables**<br/>Buffer capacities 6 ints {1-10}"]
+MOO_Controller["**MOO Controller**<br/>Coordinates optimization run<br/>Configures NSGA2 and BufferCapacityProblem"]
+NSGA2_Algorithm["**NSGA2 Algorithm**<br/>Population pop_size generations n_gen<br/>Crossover SBX Mutation PM"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Decision variables 6 buffer caps<br/>Bounds {1-10} n_replications configured"]
+MultiprocessingPool["**Multiprocessing Pool**<br/>Parallel workers n_cores<br/>Maps tasks to evaluate function"]
+EvaluateWorker["**evaluate single individual**<br/>Runs n_replications of run_simulation<br/>Returns objectives wip and negative throughput"]
+SimulationRunner["**run simulation**<br/>Accepts seed and caps<br/>Creates simpy environment and runs until measure time"]
+SimulationComponents["**Simulation Components**<br/>part generator sample wip sink<br/>Instantiates delay buffers and machines"]
+Machine["**Machine**<br/>Attributes working_time failed_time_total wait_input_time blocked_time active_count processed_count is_up<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+DelayBuffer["**DelayBuffer**<br/>Attributes cap delay tokens in_transit store<br/>Methods put get free_capacity in_transit_count"]
+ResultsAggregator["**Results Aggregator**<br/>Computes throughput wip produced_parts<br/>Collects per machine energy stats"]
+Exporter["**Export History**<br/>Writes generation history to CSV file<br/>Omits invalid solutions"]
+ParetoFront["**Pareto Front**<br/>Set of nondominated solutions<br/>Objective minimize wip maximize throughput"]
+
+Input_Variables --> MOO_Controller
+MOO_Controller --> NSGA2_Algorithm
+NSGA2_Algorithm --> BufferCapacityProblem
+BufferCapacityProblem --> MultiprocessingPool
+MultiprocessingPool --> EvaluateWorker
+EvaluateWorker --> SimulationRunner
+SimulationRunner --> SimulationComponents
+SimulationComponents --> Machine
+SimulationComponents --> DelayBuffer
+SimulationRunner --> ResultsAggregator
+ResultsAggregator --> EvaluateWorker
+EvaluateWorker --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2_Algorithm
+NSGA2_Algorithm --> ParetoFront
+NSGA2_Algorithm --> Exporter
+Exporter --> ParetoFront

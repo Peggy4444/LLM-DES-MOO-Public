@@ -1,0 +1,39 @@
+flowchart TD
+Start["**Start**<br/>launch script and set multiprocessing start method"]
+Optimizer["**NSGA2 Optimizer**<br/>attributes pop_size n_gen sampling crossover mutation<br/>method run_nsga2_optimization"]
+Problem["**BufferCapacityProblem**<br/>attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>method _evaluate"]
+DecisionVars["**Decision Variables**<br/>six buffer capacities caps in {1-10}"]
+Multiproc["**Multiprocessing Pool**<br/>attributes processes number_of_workers<br/>method map tasks to evaluate_single_individual"]
+EvalSingle["**evaluate_single_individual**<br/>inputs x n_replications base_seed warmup measure_until<br/>method run_replications and return [avg_wip negative_avg_throughput]"]
+Aggregator["**Result Aggregator**<br/>compute avg_throughput avg_wip and objectives f1 f2"]
+RunSim["**run_simulation**<br/>inputs seed caps warmup measure_until<br/>method build env run warmup run measurement return metrics dict"]
+DelayBuf["**DelayBuffer**<br/>attributes cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"]
+Machine["**Machine**<br/>attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity is_up active_count processed_count<br/>methods run waiting_energy_consumption working_energy_consumption reset_stats"]
+PartGen["**part_generator**<br/>produces parts into raw_input at fixed interval"]
+SampleWIP["**sample_wip**<br/>samples WIP every fixed interval and records values"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>attributes population selection crossover mutation history<br/>method evolve generations evaluate population"]
+Export["**export_history_to_csv**<br/>writes per generation solutions and KPIs to CSV in results directory"]
+End["**End**<br/>optimization complete and results exported"]
+
+Start --> Optimizer
+Optimizer --> Problem
+Problem --> DecisionVars
+Problem --> Multiproc
+Multiproc --> EvalSingle
+EvalSingle --> RunSim
+RunSim --> DelayBuf
+RunSim --> Machine
+RunSim --> PartGen
+RunSim --> SampleWIP
+RunSim --> Aggregator
+EvalSingle --> Aggregator
+Aggregator --> Multiproc
+Multiproc --> Problem
+Problem --> NSGA2Algo
+NSGA2Algo --> Optimizer
+NSGA2Algo --> Problem
+NSGA2Algo --> Export
+Export --> End
+
+Machine --> DelayBuf
+DelayBuf --> Machine

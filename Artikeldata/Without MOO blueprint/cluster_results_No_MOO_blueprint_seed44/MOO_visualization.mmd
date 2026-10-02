@@ -1,0 +1,56 @@
+flowchart TD
+MOO_Controller["**MOO Controller**<br/>nsga2 optimization entry point"]
+Init_Pop["**Initialize Population**<br/>create POP_SIZE individuals"]
+Create_Ind["**Create Individual**<br/>sample N_VARS capacities range {1-10} ensure feasibility"]
+Feasibility["**Feasibility Check**<br/>total capacity must be <= MAX_TOTAL_CAPACITY"]
+Eval_Pop["**Evaluate Population**<br/>evaluate feasible individuals in parallel"]
+Pool["**Multiprocessing Pool**<br/>parallel map of Evaluate Individual"]
+Eval_Ind["**Evaluate Individual**<br/>check feasibility then run simulation with caps"]
+Run_With_Caps["**Run Simulation With Caps**<br/>pass buffer capacities into simulator"]
+Run_Sim["**Run Simulation**<br/>construct environment buffers machines run sampling"]
+Buffers["**Buffer Config**<br/>post loading conveyor washing pre press post press capacities"]
+Machines["**Machines and Flow**<br/>loading conveyor washing hantering presses quality"]
+Compute_Obj["**Compute Objectives**<br/>compute wip to minimize and throughput to maximize"]
+FastND["**Non Dominated Sort**<br/>fast non dominated sort of population objectives"]
+CrowdDist["**Crowding Distance**<br/>distance calculation for selection within front"]
+TournamentSel["**Tournament Selection**<br/>select parents for crossover using dominance"]
+Gen_Op["**Genetic Operators**<br/>crossover mutate create children"]
+Combine["**Combine Populations**<br/>merge parents and children then re evaluate"]
+CSV["**CSV Writer**<br/>append feasible solutions per generation to output csv"]
+LoopGen["**Generation Loop**<br/>iterate generations until N_GEN or termination"]
+Output["**Output Results**<br/>final csv with Pareto approximations"]
+
+MOO_Controller --> Init_Pop
+Init_Pop --> Create_Ind
+Create_Ind --> Feasibility
+Feasibility -->|feasible| Init_Pop
+Init_Pop --> Eval_Pop
+Eval_Pop --> Pool
+Pool --> Eval_Ind
+Eval_Ind --> Feasibility
+Feasibility -->|feasible| Run_With_Caps
+Feasibility -->|infeasible| Eval_Pop
+Run_With_Caps --> Run_Sim
+Run_Sim --> Buffers
+Run_Sim --> Machines
+Run_Sim --> Compute_Obj
+Compute_Obj --> Eval_Ind
+
+Eval_Pop --> FastND
+FastND --> LoopGen
+LoopGen --> TournamentSel
+TournamentSel --> Gen_Op
+Gen_Op --> Combine
+Combine --> Eval_Pop
+FastND --> CrowdDist
+CrowdDist --> LoopGen
+LoopGen --> CSV
+CSV --> LoopGen
+LoopGen --> Output
+
+Run_Sim -.->|uses input variables| Buffers
+Run_Sim -.->|uses machine definitions| Machines
+Eval_Pop -.->|parallel evaluation| Pool
+Combine -.->|re-evaluate combined population| Eval_Pop
+
+Output -->|results file| CSV

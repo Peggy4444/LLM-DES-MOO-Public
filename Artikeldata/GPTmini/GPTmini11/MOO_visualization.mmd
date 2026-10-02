@@ -1,0 +1,26 @@
+flowchart TD
+DecisionVars["**Decision Variables**<br/>Six buffer capacities<br/>Discrete integers {1-10}"]
+Controller["**MOO Controller**<br/>run_nsga2_optimization<br/>configures problem algorithm termination"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var - 6<br/>n_replications base_seed n_cores<br/>Method _evaluate X builds tasks"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>Attributes pop_size n_gen sampling crossover mutation<br/>Runs minimize on problem"]
+ProcessPool["**Process Pool**<br/>Parallel execution across n cores<br/>maps tasks to evaluator workers"]
+EvaluatorWorker["**Evaluator Worker**<br/>Function evaluate_single_individual<br/>Validates caps runs replications aggregates results"]
+SimulationModel["**Production Simulation**<br/>Function run_simulation seed caps warmup measure_until<br/>Returns throughput wip and per machine energy"]
+DelayBuffer["**DelayBuffer**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get free_capacity in_transit_count"]
+Machine["**Machine**<br/>Attributes process_time availability mttr working_power waiting_power capacity<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+ResultCollector["**Result Collector**<br/>Aggregates replications<br/>Computes avg_wip avg_throughput<br/>Produces objectives F and constraints G"]
+CSVExporter["**Export History**<br/>export_history_to_csv<br/>Saves feasible solutions per generation to CSV in results directory"]
+
+DecisionVars --> BufferProblem
+Controller --> BufferProblem
+Controller --> NSGA2Algo
+NSGA2Algo --> BufferProblem
+BufferProblem --> ProcessPool
+ProcessPool --> EvaluatorWorker
+EvaluatorWorker --> SimulationModel
+SimulationModel --> DelayBuffer
+SimulationModel --> Machine
+EvaluatorWorker --> ResultCollector
+ResultCollector --> BufferProblem
+NSGA2Algo --> CSVExporter
+Controller --> CSVExporter

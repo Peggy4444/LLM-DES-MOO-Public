@@ -1,0 +1,37 @@
+flowchart TD
+NSGA2_Algorithm["**NSGA2 Algorithm**<br/>Population based multi objective optimizer<br/>Sampling crossover mutation selection"]
+Decision_Variables["**Decision Variables**<br/>Six buffer capacities<br/>Discrete range {1-10} each"]
+BufferCapacityProblem["**Buffer Capacity Problem**<br/>n_var 6 n_obj 2 n_replications configurable<br/>Holds xl xu base_seed n_cores and implements _evaluate"]
+Multiprocessing_Pool["**Multiprocessing Pool**<br/>Distributes evaluation tasks across cores<br/>Maps evaluate_single_individual over population"]
+Evaluate_Individual["**evaluate_single_individual**<br/>Runs n replications per candidate<br/>Aggregates avg WIP and avg throughput as objectives"]
+Run_Simulation["**run_simulation**<br/>Executes SimPy production model<br/>Inputs seed and caps returns KPI dictionary"]
+DelayBuffer["**DelayBuffer**<br/>Attributes cap delay tokens store in_transit<br/>Methods put get free_capacity in_transit_count"]
+Machine["**Machine**<br/>Attributes process_time availability mttr working_power waiting_power capacity stats<br/>Methods run breakdown_cycle waiting_energy working_energy"]
+Simulation_Results["**Simulation Results**<br/>Throughput WIP produced_parts machine_energy per machine"]
+Objectives["**Objectives**<br/>f1 minimize WIP<br/>f2 minimize negative throughput as pymoo requires"]
+Optimization_Result["**Optimization Result**<br/>Pareto front history final population and seeds"]
+Export_History["**export_history_to_csv**<br/>Serializes generation history variables and KPIs to CSV file"]
+Results_CSV["**Results CSV**<br/>File path results/moo_simulation_results.csv for manager review"]
+Production_Manager["**Production Manager View**<br/>Consumes CSV KPI table to make capacity decisions"]
+
+Decision_Variables --> BufferCapacityProblem
+NSGA2_Algorithm --> BufferCapacityProblem
+BufferCapacityProblem --> Multiprocessing_Pool
+Multiprocessing_Pool --> Evaluate_Individual
+Evaluate_Individual --> Run_Simulation
+Run_Simulation --> DelayBuffer
+Run_Simulation --> Machine
+Run_Simulation --> Simulation_Results
+Simulation_Results --> Evaluate_Individual
+Evaluate_Individual --> Objectives
+Objectives --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2_Algorithm
+NSGA2_Algorithm --> Optimization_Result
+Optimization_Result --> Export_History
+Export_History --> Results_CSV
+Results_CSV --> Production_Manager
+
+subgraph Simulation_Components
+  DelayBuffer
+  Machine
+end

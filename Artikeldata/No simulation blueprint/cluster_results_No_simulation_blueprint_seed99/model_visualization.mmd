@@ -1,0 +1,76 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+RawMaterial["**RawMaterial**
+Source
+MEAN_INTERARRIVAL=60s"]:::store
+Loading["**Loading**
+CT≈12s
+Avail=0.9049"]:::machine
+PostLoadingBuffer["**PostLoadingBuffer**
+Cap=2
+Proc=10s"]:::buffer
+Conveyor["**Conveyor**
+CT≈6s
+Avail=1.0000"]:::machine
+PostConveyorBuffer["**PostConveyorBuffer**
+Cap=2
+Proc=10s"]:::buffer
+Washing["**Washing**
+CT≈14s
+Avail=0.8089"]:::machine
+PostWashingBuffer["**PostWashingBuffer**
+Cap=2
+Proc=10s"]:::buffer
+Handling["**Handling**
+CT≈25s
+Avail=0.9779"]:::machine
+PressSplitter["**PressSplitter**
+RoundRobin
+50/50"]:::helper
+PrePress1Buffer["**PrePress1Buffer**
+Cap=3
+Proc=32s"]:::buffer
+Press1["**Press1**
+CT≈175s
+Avail=0.8779"]:::machine
+PrePress2Buffer["**PrePress2Buffer**
+Cap=3
+Proc=32s"]:::buffer
+Press2["**Press2**
+CT≈176s
+Avail=0.8769"]:::machine
+PostPress1_2Buffer["**PostPress1_2Buffer**
+Cap=3
+Proc=32s"]:::buffer
+Quality["**Quality**
+CT≈41s
+Avail=0.8587"]:::machine
+DefectSink["**DefectSink**
+DEFECT_RATE=8.9%"]:::defect
+FinishedGoods["**FinishedGoods**
+Good parts sink
+Throughput tracked"]:::sink
+
+RawMaterial --> Loading
+Loading --> PostLoadingBuffer
+PostLoadingBuffer --> Conveyor
+Conveyor --> PostConveyorBuffer
+PostConveyorBuffer --> Washing
+Washing --> PostWashingBuffer
+PostWashingBuffer --> Handling
+Handling --> PressSplitter
+PressSplitter -->|odd count| PrePress1Buffer
+PressSplitter -->|even count| PrePress2Buffer
+PrePress1Buffer --> Press1
+PrePress2Buffer --> Press2
+Press1 --> PostPress1_2Buffer
+Press2 --> PostPress1_2Buffer
+PostPress1_2Buffer --> Quality
+Quality -->|defect?| DefectSink
+Quality -->|good| FinishedGoods

@@ -1,0 +1,26 @@
+flowchart TD
+InputCaps["**Input Capacities**<br/>Six buffer variables<br/>cap_post_loading cap_post_conveyor cap_post_washing cap_pre_press1 cap_pre_press2 cap_post_press12<br/>Domain {1-10}"]
+NSGA2Algo["**MOO Algorithm NSGA2**<br/>Attributes pop_size n_gen sampling crossover mutation<br/>Methods run_optimization minimize"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods _evaluate produce evaluation tasks"]
+EvalPool["**Evaluator Pool**<br/>Uses multiprocessing pool to parallelize evaluations<br/>Attributes n_cores pool"]
+EvalIndividual["**evaluate_single_individual**<br/>Runs multiple replications with varied seeds<br/>Aggregates per replication metrics to objectives avg_wip and neg_avg_throughput"]
+SimRunner["**Simulation Runner**<br/>Functions run_simulation_with_caps and run_simulation<br/>Builds simulation network with DelayBuffer and Machine instances<br/>Runs warmup sampling and measurement then returns metrics overall throughput wip and machine_energy"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get free_capacity in_transit_count"]
+MachineClass["**Machine Class**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource worker_processes stats is_up repair_event<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+ResultsAgg["**Objective Aggregator**<br/>Collects replication results per individual<br/>Computes avg_wip and avg_throughput returned to optimizer"]
+Exporter["**Results Exporter**<br/>export_history_to_csv<br/>Writes generation individual caps wip throughput to CSV in results directory"]
+Main["**Main Controller**<br/>Initializes multiprocessing start method<br/>Invokes run_nsga2_optimization and export_history_to_csv"]
+
+InputCaps --> BufferProblem
+NSGA2Algo --> BufferProblem
+BufferProblem --> EvalPool
+EvalPool --> EvalIndividual
+EvalIndividual --> SimRunner
+SimRunner --> DelayBufferClass
+SimRunner --> MachineClass
+SimRunner --> ResultsAgg
+ResultsAgg --> BufferProblem
+BufferProblem --> NSGA2Algo
+NSGA2Algo --> Exporter
+Main --> NSGA2Algo
+Main --> Exporter

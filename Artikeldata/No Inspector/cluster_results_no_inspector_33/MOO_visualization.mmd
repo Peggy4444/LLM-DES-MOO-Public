@@ -1,0 +1,30 @@
+flowchart TD
+Start["**MOO Optimization Process**<br/>Entry point that configures optimization<br/>Objectives wip minimize and throughput maximize"]
+ProblemNode["**BufferCapacityProblem**<br/>Attributes<br/>n_var = 6<br/>n_obj = 2<br/>xl = integer lower bounds {1-10}<br/>xu = integer upper bounds {1-10}<br/>n_replications int<br/>base_seed int<br/>n_cores int<br/>Methods<br/>_evaluate receives population matrix X and out and dispatches parallel evaluations"]
+NSGA2Node["**NSGA2 Algorithm**<br/>Attributes<br/>pop_size int<br/>sampling IntegerRandomSampling<br/>crossover SBX<br/>mutation PM<br/>eliminate_duplicates bool<br/>Methods<br/>run optimization via minimize and request evaluations from Problem"]
+EvaluatorPool["**Multiprocessing Pool**<br/>Attributes<br/>processes int equals n_cores<br/>Methods<br/>map evaluation tasks to worker function evaluate_single_individual"]
+WorkerEval["**Evaluator Worker**<br/>Function evaluate_single_individual<br/>Inputs caps decision vector x0 x1 x2 x3 x4 x5 and seed settings<br/>Runs n_replications of simulation and aggregates results<br/>Outputs objective vector avg_wip and negative avg_throughput"]
+SimRunner["**Simulation Runner**<br/>Functions run_simulation_with_caps and run_simulation<br/>Inputs DelayBuffer capacities x0 x1 x2 x3 x4 x5 domain {1-10}<br/>Uses SimPy environment and Machine and DelayBuffer classes<br/>Outputs throughput wip produced_parts and machine energy stats<br/>Methods sample_wip part_generator reset_machine_stats"]
+DelayDecision["**Buffer Decision Variables**<br/>x0 x1 x2 x3 x4 x5<br/>Domain {1-10} integers<br/>Represent DelayBuffer capacities used by simulations"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap int<br/>delay seconds<br/>tokens store in_transit<br/>Methods put get free_capacity in_transit_count"]
+MachineClass["**Machine Class**<br/>Attributes working_time failed_time_total wait_input_time blocked_time processed_count active_count is_up repair_event<br/>Parameters process_time availability mttr working_power waiting_power defect_rate defect_sink capacity<br/>Methods run reset_machine_stats waiting_energy_consumption working_energy_consumption"]
+ResultAggregator["**Result Aggregator**<br/>Collects results from pool map<br/>Builds out F objective array for Problem evaluation<br/>Returns F to optimizer for selection and history logging"]
+HistoryStore["**History Store**<br/>Stores populations X and objective arrays F across generations<br/>Accessible for post processing and export"]
+Exporter["**CSV Exporter**<br/>Function export_history_to_csv<br/>Reads History Store and writes generation and individual capacities and metrics to CSV file results directory"]
+
+Start --> ProblemNode
+ProblemNode --> NSGA2Node
+NSGA2Node --> ProblemNode
+ProblemNode --> EvaluatorPool
+EvaluatorPool --> WorkerEval
+WorkerEval --> SimRunner
+DelayDecision --> SimRunner
+SimRunner --> DelayBufferClass
+SimRunner --> MachineClass
+WorkerEval --> ResultAggregator
+EvaluatorPool --> ResultAggregator
+ResultAggregator --> ProblemNode
+NSGA2Node --> HistoryStore
+HistoryStore --> Exporter
+NSGA2Node --> Exporter
+Exporter --> HistoryStore

@@ -1,0 +1,27 @@
+flowchart TD
+MOO_Controller["**MOO_Controller** 
+Entrypoint that orchestrates the NSGA II based multi objective optimization
+Interacts with the simulation via the BufferCapacityProblem
+Discretely valued buffers caps range from 1 to 10 across three buffers"] --> BufferCapacityProblem["**BufferCapacityProblem** 
+Attributes: n_var n_obj n_constr xl xu n_replications base_seed n_cores
+Methods: evaluate X out"]
+MOO_Controller --> NSGA2_Algorithm["**NSGA2_Algorithm** 
+Attributes: pop_size sampling crossover mutation eliminate_duplicates
+Methods: run minimize configure NSGA2 components SBX PM IntegerRandomSampling"]
+NSGA2_Algorithm --> BufferCapacityProblem
+BufferCapacityProblem --> Evaluator["**Evaluator** 
+Attributes: none
+Methods: evaluate single individual aggregate F values"]
+Evaluator --> SimulationRunner["**SimulationRunner** 
+Attributes: none
+Methods: run simulation moo for a given caps and seed"]
+SimulationRunner --> Evaluator
+Evaluator --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2_Algorithm
+NSGA2_Algorithm --> MOO_Controller
+MOO_Controller --> Result_Exporter["**Result_Exporter** 
+Attributes: none
+Methods: export results to csv"]
+Result_Exporter --> Optimization_Result["**Optimization_Result** 
+Attributes: status Pareto front history
+Methods: provide final Pareto set"]

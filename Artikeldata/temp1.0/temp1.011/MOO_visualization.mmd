@@ -1,0 +1,43 @@
+flowchart TD
+StartNode["**Start**<br/>Begin optimization"]
+NSGA2_Optimizer["**NSGA2 Optimizer**<br/>pop_size, n_gen, sampling, crossover, mutation"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>n_var 6, n_obj 2, n_replications base_seed n_cores<br/>method _evaluate"]
+Population["**Population**<br/>individuals X, objectives F"]
+Individual["**Individual**<br/>decision variables caps x0 x1 x2 x3 x4 x5 {1-10}"]
+EvaluatePopulation["**Evaluate Population**<br/>create evaluation tasks for each individual"]
+MultiprocessingPool["**Multiprocessing Pool**<br/>processes n_cores map tasks evaluate_single_individual"]
+EvaluateSingle["**evaluate_single_individual**<br/>inputs x n_replications base_seed warmup measure_until<br/>validates caps range and runs replications<br/>returns objectives [avg_wip, -avg_throughput]"]
+RunWithCaps["**run_simulation_with_caps**<br/>inputs seed caps warmup measure_until<br/>instantiates buffers and machines runs simulation returns result dict"]
+RunSimulation["**run_simulation**<br/>creates simpy env part generation sampling wip collection<br/>runs warmup and measurement windows"]
+DelayBuffer["**DelayBuffer**<br/>attributes cap delay tokens store<br/>methods put get in_transit_count free_capacity"]
+MachineNode["**Machine**<br/>attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power defect_rate capacity<br/>methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+MetricsNode["**Metrics Collector**<br/>computes throughput avg_wip produced_parts machine_energy dict"]
+CollectResults["**Collect Results**<br/>pool returns list of objective pairs for population"]
+NSGA2_Update["**Update Population**<br/>assign F selection crossover mutation elimination"]
+HistoryNode["**History Archive**<br/>stores generation index individuals X and F for export"]
+ExportCSV["**Export History CSV**<br/>iterates history writes feasible solutions to results csv"]
+EndNode["**End**<br/>Optimization complete CSV exported"]
+
+StartNode --> NSGA2_Optimizer
+NSGA2_Optimizer --> BufferCapacityProblem
+BufferCapacityProblem --> Population
+Population --> Individual
+Population --> EvaluatePopulation
+EvaluatePopulation --> MultiprocessingPool
+MultiprocessingPool --> EvaluateSingle
+EvaluateSingle --> RunWithCaps
+RunWithCaps --> RunSimulation
+RunSimulation --> DelayBuffer
+RunSimulation --> MachineNode
+DelayBuffer --> MetricsNode
+MachineNode --> MetricsNode
+MetricsNode --> RunWithCaps
+RunWithCaps --> EvaluateSingle
+MultiprocessingPool --> CollectResults
+CollectResults --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2_Update
+NSGA2_Update --> Population
+NSGA2_Update --> HistoryNode
+NSGA2_Optimizer --> HistoryNode
+HistoryNode --> ExportCSV
+ExportCSV --> EndNode

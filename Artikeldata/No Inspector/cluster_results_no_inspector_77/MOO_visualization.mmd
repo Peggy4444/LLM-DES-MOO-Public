@@ -1,0 +1,24 @@
+flowchart TD
+MOO_Optimizer["**MOO Optimizer**<br/>NSGA2 controller"]
+BufferProblem["**Optimization Problem**<br/>Decision variables capacities for 6 buffers {1-10}<br/>Objectives: minimize wip and maximize throughput"]
+Inputs["**Inputs**<br/>Buffer capacities for 6 buffers<br/>cap_post_loading cap_post_conveyor cap_post_washing cap_pre_press1 cap_pre_press2 cap_post_press12"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual<br/>aggregates replication results"]
+Parallel_Pool["**Parallel Pool**<br/>Multiprocessing workers {n_cores}<br/>distributes individuals"]
+Simulation_Runner["**Simulation Runner**<br/>run_simulation_with_caps<br/>constructs simpy model with given caps<br/>returns throughput and wip per replication"]
+Production_Model["**Production Model**<br/>Machines and DelayBuffers<br/>process logic computes WIP and energy"]
+Pareto_Front["**Pareto Front**<br/>Non dominated configurations<br/>trade off wip and throughput"]
+Results_Exporter["**Results Exporter**<br/>export_history_to_csv<br/>saves generation history and objectives to CSV"]
+
+MOO_Optimizer --> BufferProblem
+BufferProblem --> Inputs
+BufferProblem --> Evaluator
+Inputs --> Evaluator
+Evaluator --> Parallel_Pool
+Parallel_Pool --> Simulation_Runner
+Simulation_Runner --> Production_Model
+Production_Model --> Simulation_Runner
+Simulation_Runner --> Evaluator
+Evaluator --> MOO_Optimizer
+MOO_Optimizer --> Pareto_Front
+MOO_Optimizer --> Results_Exporter
+Results_Exporter --> Pareto_Front

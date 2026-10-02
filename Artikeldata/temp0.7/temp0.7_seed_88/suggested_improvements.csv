@@ -1,0 +1,4 @@
+cap_post_loading,cap_post_conveyor,cap_post_washing,cap_pre_press1,cap_pre_press2,cap_post_press12,wip,throughput
+1,2,1,2,2,1,13.968353174603177,27.142857142857142
+1,1,1,3,3,4,15.105753968253968,27.32559523809524
+1,1,2,3,4,3,17.214880952380952,27.39404761904762

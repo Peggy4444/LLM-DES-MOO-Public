@@ -1,0 +1,7 @@
+scenario,description,th_mean_10seed,th_popstd_10seed,wip_mean_10seed,wip_popstd_10seed,th_pct_delta_vs_baseline,wip_pct_delta_vs_baseline,source
+baseline,"Initial buffer config, no perturbation",27.1458,0.1698,18.1577,0.1307,+0.00,+0.00,"paper/resilience/des_perturbable.py, 10 seeds [11..110]"
+(a) PT-10pct,Presses cell 2 process_time x 0.9,28.6875,0.1304,18.0421,0.2497,+5.68,-0.64,"paper/resilience/des_perturbable.py, 10 seeds [11..110]"
+(b) avail+10pp,Presses cell 2 availability +10 percentage points,28.7470,0.0918,18.2382,0.1408,+5.90,+0.44,"paper/resilience/des_perturbable.py, 10 seeds [11..110]"
+(c) MTTR-10pct,Presses cell 2 MTTR x 0.9,27.2101,0.1961,18.0661,0.3312,+0.24,-0.50,"paper/resilience/des_perturbable.py, 10 seeds [11..110]"
+(d) PrePress2 x2,PrePress2Buffer capacity 3 -> 6 (upstream of Presses cell 2),27.2875,0.1340,21.1101,0.1500,+0.52,+16.26,"paper/resilience/des_perturbable.py, 10 seeds [11..110]"
+(e) PostPress12 x2,"PostPress12Buffer capacity 3 -> 6 (downstream, shared)",27.1458,0.1698,18.1623,0.1302,+0.00,+0.03,"paper/resilience/des_perturbable.py, 10 seeds [11..110]"

@@ -1,0 +1,87 @@
+flowchart TD
+Nsga2Optimizer["**NSGA2 Optimizer**
+Controls MOO loop and algorithm
+Attributes
+pop_size n_gen n_replications base_seed n_cores
+Methods
+start_optimization returns result"]
+BufferProblem["**BufferCapacityProblem**
+Defines MOO problem for buffer capacities
+Attributes
+n_var n_obj xl xu n_replications base_seed n_cores
+Methods
+_evaluate batches individuals and collects F"]
+DecisionVars["**Decision Variables**
+All buffer capacities
+Discrete range {1-10}
+9 decision variables"]
+Objectives["**Objectives**
+Minimize wip
+Maximize throughput"]
+PoolWorker["**Multiprocessing Pool**
+Parallel evaluation of individuals
+Attributes
+processes fixed at {50}
+Action
+maps tasks to evaluator function"]
+Evaluator["**Evaluator**
+evaluate_single_individual function
+Inputs
+caps n_replications base_seed warmup measure_until
+Outputs
+averaged objectives wip and negative throughput
+Action
+runs multiple simulation replications"]
+SimulationRunner["**Simulation Runner**
+run_simulation_with_caps function
+Inputs
+seed caps warmup measure_until
+Actions
+builds simpy model with buffers machines and runs simulation
+Outputs
+metrics throughput wip machine_energy"]
+RunSim["**Run Simulation**
+run_simulation function
+Use
+baseline simulation without decision variable caps"]
+DelayBufferNode["**DelayBuffer**
+Attributes
+cap delay tokens store in_transit
+Methods
+put get in_transit_count free_capacity"]
+MachineNode["**Machine**
+Attributes
+name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity stats
+Methods
+run waiting_energy_consumption working_energy_consumption"]
+PartGenerator["**Part Generator**
+Generates parts into raw input store
+Method
+part_generator produces parts periodically"]
+SampleWIP["**WIP Sampler**
+Samples WIP every fixed interval
+Outputs
+wip_samples average wip"]
+Exporter["**Result Exporter**
+export_history_to_csv function
+Inputs
+result filename
+Outputs
+CSV file in results directory"]
+
+Nsga2Optimizer --> BufferProblem
+Nsga2Optimizer --> Exporter
+BufferProblem --> DecisionVars
+BufferProblem --> Objectives
+BufferProblem --> PoolWorker
+PoolWorker --> Evaluator
+Evaluator --> SimulationRunner
+SimulationRunner --> DelayBufferNode
+SimulationRunner --> MachineNode
+SimulationRunner --> PartGenerator
+SimulationRunner --> SampleWIP
+SimulationRunner --> RunSim
+BufferProblem --> Nsga2Optimizer
+PoolWorker --> BufferProblem
+Evaluator --> BufferProblem
+Exporter --> Nsga2Optimizer

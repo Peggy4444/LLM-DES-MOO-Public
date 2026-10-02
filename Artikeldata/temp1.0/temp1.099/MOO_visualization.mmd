@@ -1,0 +1,32 @@
+flowchart TD
+DecisionVars["**Decision Variables**<br/>Six buffer capacities for optimization<br/>post_loading post_conveyor post_washing pre_press1 pre_press2 post_press12<br/>discrete range {1-10}"]
+Problem["**BufferCapacityProblem**<br/>Attributes n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods _evaluate prepare tasks spawn multiprocessing pool collect F<br/>Role define mapping from decision X to objectives"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>Attributes pop_size sampling crossover mutation eliminate_duplicates<br/>Methods evolve population using Problem evaluations<br/>Role multi objective search"]
+Minimizer["**Minimizer**<br/>Method minimize problem with algorithm and termination<br/>Returns optimization result with history and populations"]
+MultiprocPool["**Multiprocessing Pool**<br/>Attributes processes count<br/>Methods map evaluate_single_individual across population<br/>Role parallel evaluation of candidates"]
+EvalInd["**evaluate_single_individual**<br/>Inputs candidate caps n_replications base_seed warmup measure_until<br/>Method run repeated simulations collect throughput and wip compute averages<br/>Outputs average wip and negative average throughput"]
+RunSimCaps["**run_simulation_with_caps**<br/>Inputs seed caps warmup measure_until<br/>Method construct simpy environment create DelayBuffer instances with caps create Machine instances run warmup sample wip compute KPIs<br/>Outputs result dictionary overall and machine_energy"]
+RunSim["**run_simulation**<br/>Baseline simulation using fixed buffer settings<br/>Method build env create machines buffers run warmup sample and measure KPIs"]
+MachineClass["**Machine Class**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption reset stats<br/>Role event driven workstation in simulation"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get free_capacity in_transit_count<br/>Role models transport delay and capacity including in transit tokens"]
+Objectives["**Objectives**<br/>f1 average WIP minimize<br/>f2 throughput maximize implemented as negative for minimizer<br/>Used by evaluate and Problem"]
+Result["**Optimization Result**<br/>Contains Pareto front history populations X and F<br/>Used by export and analysis"]
+CSVExport["**CSV Exporter**<br/>Method export_history_to_csv read result history write generation individual decision variables and KPIs to CSV file results moo_simulation_results.csv"]
+Main["**Main Script**<br/>Sets multiprocessing start method spawn<br/>Calls run_nsga2_optimization then export_history_to_csv<br/>Orchestrates full optimization run"]
+
+DecisionVars --> Problem
+Problem --> MultiprocPool
+MultiprocPool --> EvalInd
+EvalInd --> RunSimCaps
+RunSimCaps --> DelayBufferClass
+RunSimCaps --> MachineClass
+EvalInd --> Objectives
+MultiprocPool --> Problem
+Problem --> NSGA2Algo
+NSGA2Algo --> Minimizer
+Problem --> Minimizer
+Minimizer --> Result
+Result --> CSVExport
+Main --> Minimizer
+Main --> CSVExport
+Result --> Main

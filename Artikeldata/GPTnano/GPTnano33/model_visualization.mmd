@@ -1,0 +1,84 @@
+flowchart TD
+    classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+    classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+    classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+    classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+    classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+    classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+    RAW_INPUT_STORE["**Raw Input Store**
+Capacity=1000"]:::store
+    LOADING_ROBOT["**Loading robot**
+Process Time=12s
+Avail=90.49%"]:::machine
+    POST_LOADING_BUFFER["**Post-Loading Buffer**
+Cap=2
+Delay=10s"]:::buffer
+    CONVEYOR_BELT["**Conveyor belt**
+Process Time=6s
+Avail=100%"]:::machine
+    POST_CONVEYOR_BUFFER["**Post-Conveyor Buffer**
+Cap=2
+Delay=10s"]:::buffer
+    WASHING_MACHINE["**Washing machine**
+Process Time=14s
+Avail=80.89%"]:::machine
+    POST_WASHING_BUFFER["**Post-Washing Buffer**
+Cap=2
+Delay=10s"]:::buffer
+    HANTERING_CELL["**Hantering cell**
+Process Time=25s
+Avail=97.79%"]:::machine
+    PRE_PRESS1_STORE["**Pre-Press 1 Store**
+Cap=3"]:::store
+    SPLITTER["**Splitter**
+Routing to two buffers"]:::helper
+    PRE_PRESS1_BUFFER["**Pre-Press 1 Buffer**
+Cap=3
+Delay=32s"]:::buffer
+    PRE_PRESS2_BUFFER["**Pre-Press 2 Buffer**
+Cap=3
+Delay=32s"]:::buffer
+    PRESS_CELL1["**Presses cell 1**
+Process Time=175s"]:::machine
+    PRESS1_OUT["**Presses cell 1 Output**
+Cap=3"]:::buffer
+    PRESS_CELL2["**Presses cell 2**
+Process Time=176s"]:::machine
+    PRESS2_OUT["**Presses cell 2 Output**
+Cap=3"]:::buffer
+    MERGER["**Merger**
+Inputs=2 -> one output"]:::helper
+    POST_PRESS12_BUFFER["**Post-Press Buffer**
+Cap=3
+Delay=32s"]:::buffer
+    QUALITY_STATION["**Quality station cell**
+Process Time=41s
+Avail=85.87%
+Defect rate=0.089"]:::machine
+    SINK["**Finished goods sink**
+Cap=∞"]:::sink
+    DEFECT_SINK["**Defect sink**
+Cap=∞"]:::defect
+
+    RAW_INPUT_STORE --> LOADING_ROBOT
+    LOADING_ROBOT --> POST_LOADING_BUFFER
+    POST_LOADING_BUFFER --> CONVEYOR_BELT
+    CONVEYOR_BELT --> POST_CONVEYOR_BUFFER
+    POST_CONVEYOR_BUFFER --> WASHING_MACHINE
+    WASHING_MACHINE --> POST_WASHING_BUFFER
+    POST_WASHING_BUFFER --> HANTERING_CELL
+    HANTERING_CELL --> PRE_PRESS1_STORE
+    PRE_PRESS1_STORE --> SPLITTER
+    SPLITTER --> PRE_PRESS1_BUFFER
+    SPLITTER --> PRE_PRESS2_BUFFER
+    PRE_PRESS1_BUFFER --> PRESS_CELL1
+    PRESS_CELL1 --> PRESS1_OUT
+    PRESS1_OUT --> MERGER
+    PRE_PRESS2_BUFFER --> PRESS_CELL2
+    PRESS_CELL2 --> PRESS2_OUT
+    PRESS2_OUT --> MERGER
+    MERGER --> POST_PRESS12_BUFFER
+    POST_PRESS12_BUFFER --> QUALITY_STATION
+    QUALITY_STATION --> SINK
+    QUALITY_STATION --> DEFECT_SINK

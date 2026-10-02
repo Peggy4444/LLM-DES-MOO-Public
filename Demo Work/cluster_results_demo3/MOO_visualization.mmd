@@ -1,0 +1,34 @@
+flowchart TD
+Start["**MOO Optimization Start**<br/>Initiate NSGA2 optimization run"]
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>Evolves populations<br/>Uses Problem evaluation to score individuals"]
+BufferProblem["**BufferCapacityProblem**<br/>Decision vars 6 buffer capacities {1-10}<br/>Enforces sum of capacities constraint"]
+InputVars["**Input Variables**<br/>Six buffer capacities for DelayBuffers<br/>{1-10} discrete"]
+ConstraintNode["**Capacity Constraint**<br/>Sum of all buffer capacities must be <= 40"]
+MultiprocPool["**Multiprocessing Pool**<br/>Parallel evaluation across cores<br/>Spawns worker processes"]
+EvaluateInd["**evaluate single individual**<br/>Runs n replications per candidate<br/>Returns objectives [-throughput, energy per part]"]
+RunSimWithCaps["**run simulation with caps**<br/>Constructs DelayBuffers with given capacities<br/>Executes simulation and returns KPIs"]
+RunSim["**run simulation**<br/>Simulates production system behavior<br/>Measures throughput production and per machine energy"]
+DelayBuffer["**DelayBuffer**<br/>Buffer class with capacity and delay<br/>Tracks ready items and in transit tokens"]
+Machine["**Machine**<br/>Processes parts with failures and shift windows<br/>Tracks working and waiting energy"]
+Objectives["**Objectives**<br/>Maximize throughput<br/>Minimize energy consumption per part"]
+ResultAggregator["**Optimization Result**<br/>Pareto front of feasible solutions<br/>Throughput and energy per part"]
+CSVExport["**Export History to CSV**<br/>Writes feasible solutions from all generations<br/>Saves KPIs and decision variables to results folder"]
+
+Start --> NSGA2Algorithm
+NSGA2Algorithm --> BufferProblem
+BufferProblem --> InputVars
+BufferProblem --> ConstraintNode
+BufferProblem --> MultiprocPool
+MultiprocPool --> EvaluateInd
+EvaluateInd --> RunSimWithCaps
+RunSimWithCaps --> DelayBuffer
+RunSimWithCaps --> Machine
+RunSimWithCaps --> RunSim
+RunSim --> DelayBuffer
+RunSim --> Machine
+RunSim --> EvaluateInd
+EvaluateInd --> BufferProblem
+BufferProblem --> NSGA2Algorithm
+NSGA2Algorithm --> Objectives
+NSGA2Algorithm --> ResultAggregator
+ResultAggregator --> CSVExport

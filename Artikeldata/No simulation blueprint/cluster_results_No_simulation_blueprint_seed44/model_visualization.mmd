@@ -1,0 +1,43 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+Raw_Store["**RawMaterial\nStore**\nIA=60s"]:::store
+Loading["**Loading\nRobot**\nPT=12s"]:::machine
+PostLoading_Buffer["**PostLoading\nBuffer**\ncap=2 PT=10s"]:::buffer
+Conveyor["**Conveyor\nBelt**\nPT=6s"]:::machine
+PostConveyor_Buffer["**PostConveyor\nBuffer**\ncap=2 PT=10s"]:::buffer
+Washing["**Washing\nMachine**\nPT=14s"]:::machine
+PostWashing_Buffer["**PostWashing\nBuffer**\ncap=2 PT=10s"]:::buffer
+Handling["**Handling\nCell**\nPT=25s"]:::machine
+Splitter["**Splitter\n(Round-robin)**\nEven split to presses"]:::helper
+PrePress1_Buffer["**PrePress1\nBuffer**\ncap=3 PT=32s"]:::buffer
+PrePress2_Buffer["**PrePress2\nBuffer**\ncap=3 PT=32s"]:::buffer
+Press1["**Press1**\nPT=175s"]:::machine
+Press2["**Press2**\nPT=176s"]:::machine
+PostPress12_Buffer["**PostPress1and2\nBuffer**\ncap=3 PT=32s"]:::buffer
+Quality["**Quality\nStation**\nPT=41s"]:::machine
+Good_Sink["**Finished\nGoods\nSink**\nAccepted parts"]:::sink
+Defect_Sink["**Defect\nSink**\nScrap (8.9%)"]:::defect
+
+Raw_Store --> Loading
+Loading --> PostLoading_Buffer
+PostLoading_Buffer --> Conveyor
+Conveyor --> PostConveyor_Buffer
+PostConveyor_Buffer --> Washing
+Washing --> PostWashing_Buffer
+PostWashing_Buffer --> Handling
+Handling --> Splitter
+Splitter -- toggle --> PrePress1_Buffer
+Splitter -- toggle --> PrePress2_Buffer
+PrePress1_Buffer --> Press1
+PrePress2_Buffer --> Press2
+Press1 --> PostPress12_Buffer
+Press2 --> PostPress12_Buffer
+PostPress12_Buffer --> Quality
+Quality -- pass --> Good_Sink
+Quality -- fail (8.9%) --> Defect_Sink

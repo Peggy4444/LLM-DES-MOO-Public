@@ -1,0 +1,27 @@
+flowchart TD
+NSGA2_Optimizer["**NSGA2 Optimizer**<br/>Attributes: pop_size, n_gen, base_seed, n_cores<br/>Methods: run_nsga2_optimization, configure_algorithm, minimize_call"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Attributes: n_var, n_obj, xl, xu, n_replications, base_seed, n_cores<br/>Methods: _evaluate"]
+Decision_Vars["**Decision Variables**<br/>All buffer capacities integers in {1-10}<br/>List: post_loading, post_conveyor, post_washing, pre_press1, pre_press2, post_press12"]
+Objectives["**Optimization Objectives**<br/>f1 minimize average WIP<br/>f2 maximize throughput represented as minimize negative throughput"]
+Parallel_Evaluator["**Parallel Evaluator Pool**<br/>Attributes: n_cores<br/>Methods: multiprocessing pool map evaluate_single_individual"]
+Eval_Function["**evaluate_single_individual**<br/>Input: caps, n_replications, base_seed<br/>Actions: constraint check total_capacity less_or_equal 40, seed generation, call run_simulation_for_caps<br/>Returns: avg_wip, avg_throughput or large penalty for infeasible"]
+Simulation_Runner["**Simulation Runner**<br/>Attributes: SIM_TIME, WARMUP, REPLICATIONS<br/>Methods: run_simulation_for_caps, run_replication"]
+Production_Line["**ProductionLine**<br/>Attributes: completed_parts, defective_parts, system_wip, wip_time_area, energy_machines, raw_buffer, final_buffer, defect_sink, buffers<br/>Methods: generator, flow, wip_change, collect_energy"]
+Machine_Class["**Machine**<br/>Attributes: name, mean_time, availability, mttr, mtbf, failed, state, energy_kwh, resource<br/>Methods: breakdown_process, run, processing_time, log_energy, set_state"]
+Buffer_Class["**Buffer**<br/>Attributes: name, capacity, process_time, store<br/>Methods: put, get, process"]
+Evaluation_Result["**Evaluation Result**<br/>Outputs: avg_wip, avg_throughput"]
+Result_Exporter["**Result Exporter**<br/>Methods: export_history_to_csv<br/>Outputs: CSV results file with generation, decision variables, KPI values"]
+
+NSGA2_Optimizer --> BufferCapacityProblem
+BufferCapacityProblem --> Decision_Vars
+BufferCapacityProblem --> Objectives
+BufferCapacityProblem --> Parallel_Evaluator
+Parallel_Evaluator --> Eval_Function
+Eval_Function --> Simulation_Runner
+Simulation_Runner --> Production_Line
+Production_Line --> Machine_Class
+Production_Line --> Buffer_Class
+Simulation_Runner --> Evaluation_Result
+Parallel_Evaluator --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2_Optimizer
+NSGA2_Optimizer --> Result_Exporter

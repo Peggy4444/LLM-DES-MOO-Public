@@ -1,0 +1,116 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+Part_Generator["**Part generator**
+rate=1s"]:::helper
+Raw_Input["**Raw input**
+capacity=1000"]:::store
+
+Loading_robot["**Loading robot**
+CT=12s
+AVB=90.49%
+MTTR=68s"]:::machine
+
+Post_Loading_Buffer["**Post loading buffer**
+cap=2
+delay=10s"]:::buffer
+
+Conveyor_belt["**Conveyor belt**
+CT=6s
+AVB=100.00%
+MTTR=1s"]:::machine
+
+Post_Conveyor_Buffer["**Post conveyor buffer**
+cap=2
+delay=10s"]:::buffer
+
+Washing_machine["**Washing machine**
+CT=14s
+AVB=80.89%
+MTTR=269s"]:::machine
+
+Post_Washing_Buffer["**Post washing buffer**
+cap=2
+delay=10s"]:::buffer
+
+Hantering_cell["**Hantering cell**
+CT=25s
+AVB=97.79%
+MTTR=74s"]:::machine
+
+Pre_Press_Split["**Pre-press split buffer**
+capacity=6"]:::store
+
+Splitter_Node["**Splitter (round‑robin)**
+routes to Press1/Press2"]:::helper
+
+Pre_Press1_Buffer["**Pre-press1 buffer**
+cap=3
+delay=32s"]:::buffer
+
+Pre_Press2_Buffer["**Pre-press2 buffer**
+cap=3
+delay=32s"]:::buffer
+
+Presses_Cell1["**Presses cell 1**
+CT=175s
+AVB=87.79%
+MTTR=73s"]:::machine
+
+Presses_Cell2["**Presses cell 2**
+CT=176s
+AVB=87.69%
+MTTR=74s"]:::machine
+
+Press1_Out["**Press1 out buffer**
+capacity=3"]:::store
+
+Press2_Out["**Press2 out buffer**
+capacity=3"]:::store
+
+Merger_Node["**Merger**
+merges Press1/Press2"]:::helper
+
+Post_Press12_Buffer["**Post-press12 buffer**
+cap=3
+delay=32s"]:::buffer
+
+Quality_station["**Quality station cell**
+CT=41s
+AVB=85.87%
+MTTR=66s
+DEF=8.9%"]:::machine
+
+Finished_Sink["**Finished goods sink**
+capacity=100000"]:::sink
+
+Defects_Sink["**Defects / scrap sink**
+capacity=100000"]:::defect
+
+Part_Generator --> Raw_Input
+Raw_Input --> Loading_robot
+Loading_robot --> Post_Loading_Buffer
+Post_Loading_Buffer --> Conveyor_belt
+Conveyor_belt --> Post_Conveyor_Buffer
+Post_Conveyor_Buffer --> Washing_machine
+Washing_machine --> Post_Washing_Buffer
+Post_Washing_Buffer --> Hantering_cell
+Hantering_cell --> Pre_Press_Split
+Pre_Press_Split --> Splitter_Node
+Splitter_Node --> Pre_Press1_Buffer
+Splitter_Node --> Pre_Press2_Buffer
+Pre_Press1_Buffer --> Presses_Cell1
+Pre_Press2_Buffer --> Presses_Cell2
+Presses_Cell1 --> Press1_Out
+Presses_Cell2 --> Press2_Out
+Press1_Out --> Merger_Node
+Press2_Out --> Merger_Node
+Merger_Node --> Post_Press12_Buffer
+Post_Press12_Buffer --> Quality_station
+Quality_station -- "ok" --> Finished_Sink
+Quality_station -- "defect 8.9%" --> Defects_Sink

@@ -1,0 +1,56 @@
+flowchart TD
+Start["**Start**<br/>Begin MOO optimization using NSGA II style GA"]
+InitPopulation["**Init Population**<br/>Create POP_SIZE individuals<br/>Each individual has 10 buffer capacities<br/>Values per variable {1-10}"]
+EvaluatePopulation["**Evaluate Population**<br/>Parallel evaluate individuals using Pool"]
+Pool["**Multiprocessing Pool**<br/>Processes N_CORES"]
+EvaluateIndividual["**Evaluate Individual**<br/>Check feasibility sum capacities less or equal 60<br/>If feasible run simulation REPETITIONS times"]
+Feasibility["**Feasibility Check**<br/>Constraint sum capacities <= 60"]
+RunSimulation["**Simulation Runner**<br/>run_simulation runs simpy model for a given seed and buffer caps<br/>Returns throughput and wip metrics"]
+SimulationCode["**Production Simulation Code**<br/>Classes Machine and DelayBuffer implement queue physics<br/>Inputs buffer capacities and seed<br/>Outputs throughput wip and machine energy"]
+Archive["**Solution Archive**<br/>Store feasible individuals with wip and throughput"]
+Selection["**Selection**<br/>Tournament selection using dominance relation"]
+Crossover["**Crossover**<br/>Single point crossover with probability pc"]
+Mutation["**Mutation**<br/>Per gene random reset with probability pm"]
+OffspringEval["**Offspring Evaluation**<br/>Evaluate offspring in Pool and filter infeasible"]
+CombineSelection["**Combine and Select Next Gen**<br/>Combine parents and offspring<br/>Non dominated sort and crowding distance to select POP_SIZE"]
+RecordGeneration["**Record Generation**<br/>Append feasible offspring results to Archive"]
+LoopGen["**Generation Loop**<br/>Repeat for N_GEN generations"]
+SaveResults["**Save Results**<br/>Write all_solutions to CSV in results directory"]
+End["**End**<br/>MOO complete output CSV ready for analysis"]
+
+Start --> InitPopulation
+InitPopulation --> EvaluatePopulation
+EvaluatePopulation --> Pool
+Pool --> EvaluateIndividual
+EvaluateIndividual --> Feasibility
+Feasibility -- feasible --> RunSimulation
+Feasibility -- infeasible --> EvaluatePopulation
+RunSimulation --> SimulationCode
+SimulationCode --> EvaluateIndividual
+EvaluateIndividual --> Archive
+Archive --> Selection
+Selection --> Crossover
+Crossover --> Mutation
+Mutation --> OffspringEval
+OffspringEval --> Pool
+OffspringEval --> RecordGeneration
+RecordGeneration --> CombineSelection
+CombineSelection --> InitPopulation
+CombineSelection --> LoopGen
+LoopGen --> Selection
+LoopGen --> Crossover
+LoopGen --> Mutation
+LoopGen --> OffspringEval
+LoopGen -->|after N_GEN| SaveResults
+SaveResults --> End
+
+%% Additional explanatory nodes for key functions and objectives
+NSGAComponents["**NSGA Components**<br/>Non dominated sort and crowding distance<br/>Used in Combine and Select Next Gen"]
+Objectives["**Objectives**<br/>Objective 1 minimize wip<br/>Objective 2 maximize throughput represented as minimize negative throughput"]
+DecisionVars["**Decision Variables**<br/>10 buffer capacities<br/>Each integer in {1-10}"]
+EvalConfig["**Evaluation Config**<br/>REPLICATIONS per individual<br/>WARMUP and MEASURE periods used by simulation"]
+
+CombineSelection --> NSGAComponents
+InitPopulation --> DecisionVars
+EvaluatePopulation --> EvalConfig
+Archive --> Objectives

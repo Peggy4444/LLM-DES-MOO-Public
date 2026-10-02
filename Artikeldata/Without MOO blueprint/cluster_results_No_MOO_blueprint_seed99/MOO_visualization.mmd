@@ -1,0 +1,47 @@
+flowchart TD
+MOO_Orchestrator["**MOO Orchestrator**<br/>run_moo_optimization entry point<br/>configures algorithm and parallel pool<br/>triggers optimization and saves CSV"]
+BufferProblem["**BufferOptimizationProblem**<br/>Problem subclass for pymoo<br/>n_var 6<br/>n_obj 2<br/>xl {1-10}<br/>xu {1-10}<br/>type_var int<br/>method _evaluate calls evaluate_design"]
+NSGA2_Algo["**NSGA2 Algorithm**<br/>population size 50<br/>sampling crossover mutation<br/>eliminate duplicates"]
+PoolNode["**Parallel Pool**<br/>multiprocessing Pool size 50<br/>used by pymoo evaluator"]
+MinimizeCall["**Optimizer Run**<br/>minimize problem using algorithm<br/>termination generation 50<br/>evaluator type parallel pool"]
+EvaluateDesign["**evaluate_design**<br/>maps design vector x to objectives<br/>runs REPLICATIONS simulations and averages KPIs<br/>returns [wip, -throughput]"]
+DecisionVars["**Decision Variables**<br/>buffer capacities list<br/>post_loading post_conveyor post_washing<br/>pre_press1 pre_press2 post_press12<br/>domain {1-10} integer"]
+RunSimCaps["**run_simulation_with_capacities**<br/>builds simpy model using decision caps<br/>executes simulation until measure end<br/>returns overall KPIs and machine energy"]
+RunSimCore["**Simulation Core**<br/>part generation and sampling WIP every 600 seconds<br/>computes throughput and average WIP<br/>warmup reset statistics"]
+DelayBufferClass["**DelayBuffer class**<br/>attributes cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"]
+MachineClass["**Machine class**<br/>attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+ResultsWriter["**Results Writer**<br/>collects population history<br/>filters infeasible solutions<br/>writes unique rows to CSV results"]
+Objectives["**Objectives**<br/>f1 minimize wip<br/>f2 maximize throughput implemented as minimize negative throughput"]
+Constants["**Global Constants**<br/>RANDOM_SEED 99<br/>REPLICATIONS 10<br/>SIM_TIME 691200 WARMUP 86400"]
+
+MOO_Orchestrator --> BufferProblem
+MOO_Orchestrator --> NSGA2_Algo
+MOO_Orchestrator --> PoolNode
+MOO_Orchestrator --> MinimizeCall
+MOO_Orchestrator --> ResultsWriter
+MOO_Orchestrator --> Constants
+
+MinimizeCall --> BufferProblem
+MinimizeCall --> NSGA2_Algo
+MinimizeCall --> PoolNode
+MinimizeCall --> EvaluateDesign
+MinimizeCall --> ResultsWriter
+
+EvaluateDesign --> DecisionVars
+EvaluateDesign --> RunSimCaps
+EvaluateDesign --> Constants
+EvaluateDesign --> Objectives
+
+RunSimCaps --> RunSimCore
+RunSimCaps --> DelayBufferClass
+RunSimCaps --> MachineClass
+
+RunSimCore --> DelayBufferClass
+RunSimCore --> MachineClass
+
+DelayBufferClass --> MachineClass
+MachineClass --> RunSimCore
+
+ResultsWriter --> MOO_Orchestrator
+
+Objectives --> ResultsWriter

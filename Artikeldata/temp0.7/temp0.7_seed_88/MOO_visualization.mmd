@@ -1,0 +1,30 @@
+flowchart TD
+MOO_Algorithm["**MOO Algorithm**<br/>NSGA2 controller run_nsga2_optimization<br/>sampling crossover mutation selection"]
+Population["**Population**<br/>Individuals with 6 buffer capacities<br/>caps per individual {1-10}"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Defines decision variables n_var 6<br/>_evaluate schedules parallel evaluations"]
+Parallel_Evaluator["**Parallel Evaluator**<br/>multiprocessing Pool map tasks<br/>evaluates many individuals in parallel"]
+Evaluator_Function["**Evaluator Function**<br/>evaluate_single_individual<br/>runs n replications and averages metrics"]
+Simulation_Runner["**Simulation Runner**<br/>run_simulation_with_caps builds model with caps<br/>returns throughput wip and energy"]
+DelayBuffer_Class["**DelayBuffer**<br/>attributes cap delay tokens store<br/>methods put get free_capacity in_transit_count"]
+Machine_Class["**Machine**<br/>attributes process_time availability mttr working_power waiting_power capacity<br/>methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+Metrics_Aggregation["**Metrics Aggregation**<br/>compute throughput wip produced parts<br/>aggregate machine energy and samples"]
+Objectives["**Objectives**<br/>Minimize wip<br/>Maximize throughput"]
+Result_Exporter["**Result Exporter**<br/>export_history_to_csv writes generation history to CSV<br/>saves per generation caps wip throughput"]
+Production_Manager["**Production Manager**<br/>Provides goals approves trade offs<br/>reviews CSV results"]
+
+MOO_Algorithm --> Population
+MOO_Algorithm --> BufferCapacityProblem
+Population --> BufferCapacityProblem
+BufferCapacityProblem --> Parallel_Evaluator
+Parallel_Evaluator --> Evaluator_Function
+Evaluator_Function --> Simulation_Runner
+Simulation_Runner --> DelayBuffer_Class
+Simulation_Runner --> Machine_Class
+Machine_Class --> DelayBuffer_Class
+Simulation_Runner --> Metrics_Aggregation
+Metrics_Aggregation --> Evaluator_Function
+Evaluator_Function --> BufferCapacityProblem
+BufferCapacityProblem --> MOO_Algorithm
+MOO_Algorithm --> Objectives
+MOO_Algorithm --> Result_Exporter
+Result_Exporter --> Production_Manager

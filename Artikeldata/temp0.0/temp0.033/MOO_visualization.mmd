@@ -1,0 +1,37 @@
+flowchart TD
+Optimize["**Run NSGA2 Optimization**<br/>Creates problem and algorithm<br/>Starts minimize loop"]
+BufferProblem["**BufferCapacityProblem**<br/>attributes: n_replications n_cores base_seed<br/>method: _evaluate(X)"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>config: pop size sampling crossover mutation<br/>uses termination criterion"]
+Termination["**Termination**<br/>by number of generations n_gen"]
+ProblemEvaluate["**Problem Evaluate Flow**<br/>_evaluate batches individuals<br/>creates tasks for Pool"]
+Pool["**Multiprocessing Pool**<br/>parallel workers n_cores<br/>maps evaluate tasks"]
+EvalInd["**evaluate single individual**<br/>inputs: capacities vector seed n_replications<br/>runs multiple replications and aggregates<br/>returns: avg_wip negative throughput"]
+RunSimCaps["**run simulation with capacities**<br/>inputs: seed capacities vector<br/>constructs DelayBuffer and Machine objects<br/>runs warmup and measurement"]
+RunSim["**run simulation core**<br/>generates parts samples WIP every interval<br/>computes throughput and avg WIP<br/>returns metrics dict"]
+Machine["**Machine**<br/>attrs: process_time availability mttr working_power waiting_power capacity<br/>methods: run waiting_energy_consumption working_energy_consumption"]
+DelayBuffer["**DelayBuffer**<br/>attrs: cap delay tokens store in_transit<br/>methods: put get in_transit_count free_capacity"]
+CollectF["**Collect Objectives**<br/>assemble out F array<br/>shape population by objectives"]
+NSGA2Step["**NSGA2 Generation Step**<br/>selection crossover mutation<br/>eliminate duplicates"]
+Pareto["**Pareto Front**<br/>nondominated set across objectives"]
+Export["**Export Results**<br/>write history and population to CSV in results folder"]
+Manager["**Production Manager**<br/>consumes CSV and Pareto front for capacity decisions"]
+
+Optimize --> BufferProblem
+Optimize --> NSGA2Algo
+NSGA2Algo --> Termination
+NSGA2Algo --> ProblemEvaluate
+ProblemEvaluate --> Pool
+Pool --> EvalInd
+EvalInd --> RunSimCaps
+RunSimCaps --> RunSim
+RunSim --> DelayBuffer
+RunSim --> Machine
+RunSim --> EvalInd
+EvalInd --> Pool
+Pool --> CollectF
+CollectF --> NSGA2Step
+NSGA2Step --> NSGA2Algo
+NSGA2Algo --> Pareto
+Pareto --> Export
+Export --> Manager
+Manager --> Optimize

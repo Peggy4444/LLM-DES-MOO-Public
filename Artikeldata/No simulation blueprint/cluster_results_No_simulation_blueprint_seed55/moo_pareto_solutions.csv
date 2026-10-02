@@ -1,0 +1,5 @@
+generation,individual_index,PostLoadingBuffer_capacity,PostConveyorBuffer_capacity,PostWashingBuffer_capacity,PrePress1Buffer_capacity,PrePress2Buffer_capacity,PostPress1AndPress2Buffer_capacity,wip,throughput
+0,3,10,8,6,4,10,7,7055.326467013889,28.699404761904763
+0,7,4,2,1,10,1,8,7052.592083333333,28.58333333333333
+1,2,1,1,6,5,1,7,7062.099357638889,28.96845238095238
+2,7,1,1,6,5,1,2,7081.32140625,29.082142857142856

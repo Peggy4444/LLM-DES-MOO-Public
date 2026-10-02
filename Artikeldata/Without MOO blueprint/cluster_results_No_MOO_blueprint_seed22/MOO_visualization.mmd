@@ -1,0 +1,59 @@
+flowchart TD
+InputCaps["**Buffer Capacities**<br/>Decision variables for optimization<br/>Names list post_loading_buffer post_conveyor_buffer post_washing_buffer pre_press1_buffer pre_press2_buffer post_press12_buffer<br/>Domain discrete values {1-10}"]
+NSGA2_Controller["**NSGAII Controller**<br/>Attributes pop_size n_gen n_cores RANDOM_SEED<br/>Methods initialize_population run_generation evaluate select vary environmental_selection log_results"]
+Population["**Population**<br/>Attributes individuals list of Individual length POP_SIZE<br/>Methods create_initial_population"]
+Individual["**Individual**<br/>Attributes capacities vector length 6 each value in {1-10}<br/>Represents one candidate design"]
+Evaluator["**Evaluator**<br/>Methods evaluate_individual evaluate_population run_simulation_with_caps<br/>Constraints check feasibility throughput must be positive"]
+Pool["**Multiprocessing Pool**<br/>Attributes processes N_CORES<br/>Used to parallelize evaluation of individuals"]
+Simulation["**Simulation Engine**<br/>Core method run_simulation with seed and capacities<br/>Returns objectives throughput and wip"]
+DelayBuffer["**Delay Buffer**<br/>Attributes cap delay tokens in_transit store capacity<br/>Methods put get free_capacity in_transit_count"]
+Machine["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>State working_time failed_time blocked_time active_count is_up<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+Objectives["**Objectives**<br/>Throughput maximize<br/>WIP minimize<br/>Objective tuple throughput and wip"]
+FastSort["**Fast Non Dominated Sort**<br/>Method fast_non_dominated_sort<br/>Partitions population indices into Pareto fronts"]
+CrowdDist["**Crowding Distance**<br/>Method crowding_distance<br/>Computes diversity metric inside a front"]
+SelectionOps["**Selection and Variation**<br/>Methods tournament_selection one_point_crossover uniform_mutation<br/>Generates offspring population"]
+ResultsWriter["**Results Writer**<br/>Writes CSV rows per evaluated individual per generation<br/>Stores generation individual capacities throughput wip"]
+
+InputCaps --> NSGA2_Controller
+NSGA2_Controller --> Population
+Population --> Individual
+NSGA2_Controller --> Evaluator
+NSGA2_Controller --> ResultsWriter
+NSGA2_Controller --> SelectionOps
+NSGA2_Controller --> FastSort
+NSGA2_Controller --> CrowdDist
+
+Population --> Evaluator
+Evaluator --> Pool
+Pool --> Evaluator
+
+Evaluator --> Simulation
+Simulation --> Objectives
+
+Simulation --> DelayBuffer
+Simulation --> Machine
+
+FastSort --> NSGA2_Controller
+CrowdDist --> NSGA2_Controller
+Objectives --> FastSort
+Objectives --> CrowdDist
+
+SelectionOps --> Population
+ResultsWriter --> NSGA2_Controller
+
+%% Details showing interaction loop
+NSGA2_Controller -. Evaluates population via .-> Evaluator
+Evaluator -. Runs parallel jobs via .-> Pool
+Pool -. Calls simulation wrapper via .-> Simulation
+Simulation -. Returns objectives via .-> Objectives
+FastSort -. Ranks individuals via .-> NSGA2_Controller
+CrowdDist -. Orders individuals via .-> NSGA2_Controller
+NSGA2_Controller -. Applies selection and variation via .-> SelectionOps
+SelectionOps -. Produces offspring which update .-> Population
+NSGA2_Controller -. Logs evaluated results via .-> ResultsWriter
+
+%% Notes for production manager clarity as separate labeled nodes
+SimComponents["**Simulation Components**<br/>Key parts used by evaluator<br/>Delay buffers model queues and transit Machine models processing with failures and energy accounting"] 
+SimComponents --> DelayBuffer
+SimComponents --> Machine
+Simulation --> SimComponents

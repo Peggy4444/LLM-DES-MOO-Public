@@ -1,0 +1,83 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+RawSource["**Raw material source** 
+Infinite generator"]:::store
+PreLoadingBuffer["**PreLoadingBuffer** 
+Cap=1000"]:::buffer
+LoadingRobot["**Loading robot** 
+CT=12.0s
+AVB=0.9049
+MTTR=68s"]:::machine
+PostLoadingBuffer["**PostLoadingBuffer** 
+Cap=2
+PT=10s"]:::buffer
+ConveyorBelt["**Conveyor belt** 
+CT=6.0s
+AVB=1.000
+MTTR=1s"]:::machine
+PostConveyorBuffer["**PostConveyorBuffer** 
+Cap=2
+PT=10s"]:::buffer
+WashingMachine["**Washing machine** 
+CT=14.0s
+AVB=0.8089
+MTTR=269s"]:::machine
+PostWashingBuffer["**PostWashingBuffer** 
+Cap=2
+PT=10s"]:::buffer
+HanteringCell["**Hantering cell** 
+CT=25.0s
+AVB=0.9779
+MTTR=74s"]:::machine
+PressRouter["**Press router\n(splitter)** 
+Even split to presses"]:::helper
+PrePress1Buffer["**PrePress1Buffer** 
+Cap=3
+PT=32s"]:::buffer
+PrePress2Buffer["**PrePress2Buffer** 
+Cap=3
+PT=32s"]:::buffer
+Press1["**Presses cell 1** 
+CT=175.0s
+AVB=0.8779
+MTTR=73s"]:::machine
+Press2["**Presses cell 2** 
+CT=176.0s
+AVB=0.8769
+MTTR=74s"]:::machine
+PostPress12Buffer["**PostPress1&Press2Buffer** 
+Cap=3
+PT=32s"]:::buffer
+QualityStation["**Quality station cell** 
+CT=41.0s
+AVB=0.8587
+MTTR=66s"]:::machine
+FinishedSink["**Finished goods sink** 
+Counted after warm-up"]:::sink
+DefectSink["**Defect sink** 
+Defect rate=8.9%"]:::defect
+
+RawSource --> PreLoadingBuffer
+PreLoadingBuffer --> LoadingRobot
+LoadingRobot --> PostLoadingBuffer
+PostLoadingBuffer --> ConveyorBelt
+ConveyorBelt --> PostConveyorBuffer
+PostConveyorBuffer --> WashingMachine
+WashingMachine --> PostWashingBuffer
+PostWashingBuffer --> HanteringCell
+HanteringCell --> PressRouter
+PressRouter -->|50%| PrePress1Buffer
+PressRouter -->|50%| PrePress2Buffer
+PrePress1Buffer --> Press1
+PrePress2Buffer --> Press2
+Press1 --> PostPress12Buffer
+Press2 --> PostPress12Buffer
+PostPress12Buffer --> QualityStation
+QualityStation -->|p=0.089| DefectSink
+QualityStation -->|p=0.911| FinishedSink

@@ -1,0 +1,43 @@
+flowchart TD
+DecisionVars["**Decision Variables**<br/>Buffer capacities<br/>{1-10} each"] 
+BufferProblem["**BufferCapacityProblem**<br/>attrs n_var n_obj xl xu<br/>n_replications base_seed n_cores<br/>methods __init__ _evaluate"] 
+RunNSGA2["**run_nsga2_optimization**<br/>Config pop_size n_gen<br/>sampling crossover mutation<br/>returns optimization result"] 
+NSGA2Algo["**NSGA2 Algorithm**<br/>pop sampling crossover mutation<br/>evolve population"] 
+EvaluateInd["**evaluate_single_individual**<br/>inputs candidate caps and seed<br/>run multiple replications<br/>aggregate metrics into objectives"] 
+PoolProc["**Multiprocessing Pool**<br/>parallel evaluation of individuals<br/>maps tasks to workers"] 
+RunSimCaps["**run_simulation_with_caps**<br/>map decision caps to DelayBuffer capacities<br/>construct simulation model<br/>run sim and return metrics"] 
+RunSim["**run_simulation**<br/>construct baseline simulation model<br/>run sim and return metrics"] 
+MachineClass["**Machine**<br/>attrs name input_buffer output_buffer<br/>process_time availability mttr<br/>working_power waiting_power capacity<br/>methods run breakdown_cycle<br/>waiting_energy working_energy"] 
+DelayBufferClass["**DelayBuffer**<br/>attrs cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"] 
+PartGen["**part_generator**<br/>generates parts at fixed rate<br/>feeds raw input buffer"] 
+SimulationOutputs["**Simulation Metrics**<br/>throughput wip produced_parts<br/>machine_energy per machine"] 
+ObjectivesNode["**Objectives**<br/>minimize WIP<br/>maximize Throughput"] 
+ResultsNode["**Optimization Result**<br/>Pareto front history<br/>solutions with KPIs"] 
+ExportCSV["**export_history_to_csv**<br/>export generations and KPIs to CSV<br/>filters non positive throughput"] 
+
+DecisionVars --> BufferProblem
+BufferProblem --> RunNSGA2
+RunNSGA2 --> NSGA2Algo
+RunNSGA2 --> BufferProblem
+NSGA2Algo --> BufferProblem
+NSGA2Algo --> ObjectivesNode
+
+BufferProblem --> PoolProc
+PoolProc --> EvaluateInd
+EvaluateInd --> RunSimCaps
+EvaluateInd --> RunSim
+RunSimCaps --> DelayBufferClass
+RunSimCaps --> MachineClass
+RunSimCaps --> PartGen
+RunSimCaps --> SimulationOutputs
+RunSim --> DelayBufferClass
+RunSim --> MachineClass
+RunSim --> PartGen
+RunSim --> SimulationOutputs
+
+EvaluateInd --> SimulationOutputs
+SimulationOutputs --> BufferProblem
+BufferProblem --> NSGA2Algo
+NSGA2Algo --> ResultsNode
+RunNSGA2 --> ResultsNode
+ResultsNode --> ExportCSV

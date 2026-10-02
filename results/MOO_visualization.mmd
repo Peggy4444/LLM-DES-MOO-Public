@@ -1,0 +1,32 @@
+flowchart TD
+Start["**Start**<br/>Begin optimization"]
+BufferProblem["**BufferCapacityProblem**<br/>Attributes n_var n_obj n_constr xl xu n_replications base_seed<br/>Methods _evaluate"]
+DecisionVars["**Decision Variables**<br/>Six buffer capacities one per buffer<br/>{1-10} discrete integer"]
+Algorithm["**NSGA2 Algorithm**<br/>Evolutionary loop managing populations<br/>Parameters pop_size n_gen"]
+Sampling["**Sampling and Operators**<br/>Integer random sampling SBX crossover PM mutation<br/>Duplicate elimination enabled"]
+Evaluate["**Evaluate Population**<br/>BufferCapacityProblem _evaluate called for batch of individuals"]
+RunSimulation["**run_simulation**<br/>Inputs capacities seed warmup measure_until<br/>Performs multiple replications"]
+SimModel["**Simulation Model**<br/>Machines DelayBuffer Stores part generator<br/>Returns per run throughput wip and energy metrics"]
+ComputeObjectives["**Compute Objectives**<br/>Aggregate replications compute mean wip mean throughput<br/>Set F as wip and negative throughput"]
+ConstraintCheck["**Constraint Check**<br/>Sum capacities less or equal 40 flagged infeasible<br/>Assign large bad objectives when infeasible"]
+UpdatePop["**Population Update**<br/>Assign fitness apply selection crossover mutation replacement<br/>Record feasible individuals to history"]
+Termination["**Termination Check**<br/>Stop when generation limit reached or termination criteria met"]
+History["**History Store**<br/>Save feasible solutions per generation with KPIs and capacities"]
+ExportCSV["**export_history_to_csv**<br/>Read history write CSV with generation individual capacities wip throughput"]
+End["**End**<br/>Optimization complete and results exported"]
+
+Start --> BufferProblem
+BufferProblem --> DecisionVars
+DecisionVars --> Algorithm
+Algorithm --> Sampling
+Sampling --> Evaluate
+Evaluate --> RunSimulation
+RunSimulation --> SimModel
+SimModel --> ComputeObjectives
+ComputeObjectives --> ConstraintCheck
+ConstraintCheck --> UpdatePop
+UpdatePop --> History
+UpdatePop --> Termination
+Termination -->|not finished| Evaluate
+Termination -->|finished| ExportCSV
+ExportCSV --> End

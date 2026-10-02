@@ -1,0 +1,28 @@
+flowchart TD
+SimulationModel["**Simulation Model**<br/>Provides run_simulation function<br/>Outputs KPIs throughput wip produced_parts"]
+DelayBufferClass["**DelayBuffer Class**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get free_capacity in_transit_count delayed_put get_and_release"]
+MachineClass["**Machine Class**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity active_count<br/>Methods run breakdown_cycle waiting_energy_consumption working_energy_consumption reset_stats"]
+RunSimulation["**run_simulation**<br/>Inputs seed caps warmup measure_until<br/>Builds machines buffers and flows<br/>Returns KPI result dict"]
+EvaluateIndividual["**evaluate_single_individual**<br/>Inputs candidate capacities and n_replications base_seed<br/>Runs run_simulation multiple times with different seeds<br/>Returns objectives wip min and throughput max stored as negative for minimization"]
+BufferCapacityProblemClass["**BufferCapacityProblem Class**<br/>Decision variables buffer capacities {1-10} for six buffers<br/>Attributes n_replications base_seed n_cores<br/>Method _evaluate maps population to evaluate_single_individual using parallel pool"]
+MultiprocessingPool["**Multiprocessing Pool**<br/>Parallelizes evaluation tasks<br/>Worker count controlled by n_cores"]
+NSGA2Alg["**NSGA2 Algorithm**<br/>Sampling crossover mutation operators<br/>Works with BufferCapacityProblem Class<br/>Generates populations and Pareto front"]
+RunOptimization["**run_nsga2_optimization**<br/>Constructs problem and algorithm<br/>Calls minimize to run evolution<br/>Returns optimization result object"]
+ExportCSV["**export_history_to_csv**<br/>Takes optimization result history<br/>Writes generation individual capacities wip throughput to CSV in results folder"]
+ResultsFile["**Results CSV File**<br/>Generated file results/moo_simulation_results.csv<br/>Contains gen ind buffer1_cap buffer2_cap buffer3_cap buffer4_cap buffer5_cap buffer6_cap wip throughput"]
+Main["**Main Script**<br/>Sets CORES runs RunOptimization then ExportCSV<br/>Prints final population sample summary"]
+
+Main --> RunOptimization
+RunOptimization --> NSGA2Alg
+RunOptimization --> BufferCapacityProblemClass
+BufferCapacityProblemClass --> MultiprocessingPool
+MultiprocessingPool --> EvaluateIndividual
+EvaluateIndividual --> RunSimulation
+RunSimulation --> SimulationModel
+SimulationModel --> DelayBufferClass
+SimulationModel --> MachineClass
+EvaluateIndividual --> BufferCapacityProblemClass
+NSGA2Alg --> BufferCapacityProblemClass
+RunOptimization --> ExportCSV
+ExportCSV --> ResultsFile
+Main --> ExportCSV

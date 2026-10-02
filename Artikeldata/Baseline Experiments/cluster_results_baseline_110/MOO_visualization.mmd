@@ -1,0 +1,26 @@
+flowchart TD
+InputVariables["**Input Variables**<br/>Buffer capacities for 6 DelayBuffers<br/>Discrete values {1-10} each"]
+BufferCapacityProblem["**BufferCapacityProblem**<br/>Attributes<br/>n_var 6<br/>xl array {1-10}<br/>xu array {1-10}<br/>n_replications<br/>base_seed<br/>n_cores<br/>Methods<br/>_evaluate<br/>prepare_tasks"]
+NSGA2Algorithm["**NSGA2 Algorithm**<br/>Attributes<br/>pop_size<br/>n_gen<br/>sampling crossover mutation<br/>Methods<br/>run_optimization<br/>selection variation environmental_selection"]
+WorkerPool["**Worker Pool**<br/>multiprocessing Pool<br/>processes n_cores<br/>method map tasks to workers"]
+EvaluateSingle["**Evaluate Single Individual**<br/>Inputs caps seed replications<br/>Methods<br/>run_simulation_with_caps call<br/>aggregate average wip average throughput<br/>Return objectives wip and negative throughput"]
+SimulationRunner["**Simulation Runner**<br/>Functions run_simulation_with_caps and run_simulation<br/>Inputs caps seed warmup measure_until<br/>Runs simpy model replications<br/>Outputs per run metrics throughput wip machine_energy"]
+DelayBufferClass["**DelayBuffer**<br/>Attributes cap delay store tokens in_transit<br/>Methods put get in_transit_count free_capacity"]
+MachineClass["**Machine**<br/>Attributes name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource worker_processes stats is_up repair_event mtbf<br/>Methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption reset_machine_stats"]
+ResultCollector["**Result Collector**<br/>Collects objective matrix F<br/>Stores population history and generations"]
+Exporter["**Result Exporter**<br/>export_history_to_csv<br/>Writes CSV with generation index decision variables wip throughput"]
+Objectives["**Objectives**<br/>f1 minimize wip<br/>f2 maximize throughput implemented as minimize negative throughput"]
+
+InputVariables --> BufferCapacityProblem
+BufferCapacityProblem --> WorkerPool
+WorkerPool --> EvaluateSingle
+EvaluateSingle --> SimulationRunner
+SimulationRunner --> DelayBufferClass
+SimulationRunner --> MachineClass
+EvaluateSingle --> BufferCapacityProblem
+BufferCapacityProblem --> NSGA2Algorithm
+NSGA2Algorithm --> ResultCollector
+ResultCollector --> Exporter
+NSGA2Algorithm --> Objectives
+BufferCapacityProblem --> Objectives
+Exporter --> ResultCollector

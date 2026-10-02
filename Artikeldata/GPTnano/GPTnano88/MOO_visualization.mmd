@@ -1,0 +1,37 @@
+flowchart TD
+StartNode["**Start MOO** 
+Initializes NSGA-II optimization and links to the simulation model"]
+BufferProblemNode["**BufferCapacityProblem** 
+Attributes: n_var, n_obj, n_constr, xl, xu, n_replications, base_seed, n_cores
+Methods: __init__, _evaluate"]
+NsgaAlgorithmNode["**NSGA2Algorithm** 
+Attributes: pop_size, sampling, crossover, mutation, eliminate_duplicates
+Methods: __init__"]
+EvalSingleNode["**EvaluateSingleIndividual** 
+Inputs: x, n_replications, base_seed, warmup, measure_until
+Outputs: wip, negative_throughput
+Process: validates caps, seeds, runs simulation across replications, averages"]
+RunSimulationNode["**RunSimulation** 
+Inputs: seed, caps, warmup, measure_until
+Outputs: results with throughput, wip, energy
+Description: builds simpy environment and equipment and runs warmup and measurement"]
+CheckTerminationNode["**Check termination** 
+Not yet reached n_gen -> continue loop
+Reached n_gen -> export results"]
+ExportCsvNode["**ExportHistoryToCSV** 
+Inputs: optimization history
+Outputs: CSV file
+Description: saves feasible solutions to results/moo_simulation_results.csv"]
+EndNode["**End** 
+Description: optimization finished and data exported"]
+
+StartNode --> BufferProblemNode
+BufferProblemNode --> NsgaAlgorithmNode
+NsgaAlgorithmNode --> EvalSingleNode
+EvalSingleNode --> RunSimulationNode
+RunSimulationNode --> EvalSingleNode
+EvalSingleNode --> NsgaAlgorithmNode
+NsgaAlgorithmNode --> CheckTerminationNode
+CheckTerminationNode -- No --> NsgaAlgorithmNode
+CheckTerminationNode -- Yes --> ExportCsvNode
+ExportCsvNode --> EndNode

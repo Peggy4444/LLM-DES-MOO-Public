@@ -1,0 +1,30 @@
+flowchart TD
+DecisionVars["**Decision Variables**<br/>6 buffer capacities<br/>Integer values {1-10}"]
+ProblemClass["**BufferCapacityProblem**<br/>Attributes n_var=6<br/>n_obj=2 xl={1-10} xu={1-10}<br/>Methods _evaluate X out"]
+NSGA2Node["**NSGA2 Algorithm**<br/>Sampling IntegerRandomSampling SBX crossover PM mutation<br/>Minimizes the problem via pymoo"]
+RunNSGA2["**run_nsga2_optimization**<br/>Configures problem algorithm termination<br/>Invokes minimize and returns result"]
+PoolNode["**Multiprocessing Pool**<br/>Spawns n_cores workers<br/>Maps evaluate single individual in parallel"]
+EvalFunc["**evaluate_single_individual**<br/>Inputs x n_replications base_seed<br/>Applies constraint handling<br/>Calls run_simulation_for_caps and aggregates results"]
+ConstraintNode["**Constraint**<br/>sum capacities <= 40<br/>Violations lead to large penalty objectives"]
+SimulationWrapper["**run_simulation_for_caps**<br/>Inputs seed caps replications<br/>Creates Machines and Buffers per caps<br/>Runs SIM_TIME and returns avg_throughput avg_wip"]
+MachineClass["**Machine**<br/>Attributes name mean_proc_time mtbf mttr idle_power work_power<br/>Resource working failed power_log<br/>Methods _breakdown_process start_work stop_work log_power energy_kwh current_power"]
+BufferClass["**Buffer**<br/>Attributes name capacity proc_time store<br/>Methods put get process_part"]
+ExportNode["**export_history_to_csv**<br/>Reads optimization history result<br/>Filters infeasible solutions by constraint<br/>Writes feasible solutions and KPIs to CSV"]
+
+DecisionVars --> ProblemClass
+ProblemClass --> PoolNode
+ProblemClass --> NSGA2Node
+NSGA2Node --> RunNSGA2
+RunNSGA2 --> ProblemClass
+RunNSGA2 --> ExportNode
+
+PoolNode --> EvalFunc
+EvalFunc --> ConstraintNode
+ConstraintNode --> EvalFunc
+EvalFunc --> SimulationWrapper
+
+SimulationWrapper --> MachineClass
+SimulationWrapper --> BufferClass
+
+MachineClass --> SimulationWrapper
+BufferClass --> SimulationWrapper

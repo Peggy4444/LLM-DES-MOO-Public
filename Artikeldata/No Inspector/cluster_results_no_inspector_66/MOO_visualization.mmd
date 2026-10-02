@@ -1,0 +1,32 @@
+flowchart TD
+Start["**Start**<br/>User triggers optimization"]
+Main["**Main**<br/>set multiprocessing start method spawn<br/>call run_nsga2_optimization and export results"]
+InputVars["**Input Variables**<br/>Decision variables caps for 6 buffers<br/>values range {1-10} discrete integers"]
+Objectives["**Objectives**<br/>minimize WIP<br/>maximize Throughput via negative throughput objective"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>attrs pop_size n_gen sampling crossover mutation<br/>method minimize problem"]
+BufferProblem["**BufferCapacityProblem**<br/>attrs n_var n_obj xl xu n_replications base_seed n_cores<br/>method _evaluate receives population X and returns F"]
+PoolProc["**Multiprocessing Pool**<br/>parallelizes evaluate_single_individual across n_cores"]
+Evaluator["**evaluate_single_individual**<br/>inputs x n_replications base_seed warmup measure_until<br/>runs multiple replications and averages WIP and throughput"]
+Simulator["**run_simulation_moo**<br/>inputs caps seed warmup measure_until<br/>construct DelayBuffer and Machine instances<br/>run simpy environment and return metrics"]
+DelayBufferClass["**DelayBuffer**<br/>attrs cap delay store tokens _in_transit<br/>methods put get free_capacity in_transit_count"]
+MachineClass["**Machine**<br/>attrs name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity<br/>methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+History["**Optimization History**<br/>stores populations X F G across generations<br/>used by export_history_to_csv"]
+ExportCSV["**export_history_to_csv**<br/>reads history and writes CSV file in results directory<br/>fields include capacities wip throughput"]
+End["**End**<br/>CSV exported and optimization complete"]
+
+Start --> Main
+Main --> InputVars
+Main --> Objectives
+Main --> NSGA2Algo
+NSGA2Algo --> BufferProblem
+BufferProblem --> PoolProc
+PoolProc --> Evaluator
+Evaluator --> Simulator
+Simulator --> DelayBufferClass
+Simulator --> MachineClass
+Simulator --> Evaluator
+PoolProc --> BufferProblem
+BufferProblem --> NSGA2Algo
+NSGA2Algo --> History
+History --> ExportCSV
+ExportCSV --> End

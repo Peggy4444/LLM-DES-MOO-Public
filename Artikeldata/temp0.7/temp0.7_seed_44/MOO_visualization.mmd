@@ -1,0 +1,41 @@
+flowchart TD
+  InputVars["**Input Variables**<br/>Buffer capacities for DelayBuffers<br/>Discrete values {1-10}"]
+  Objectives["**Objectives**<br/>Minimize WIP<br/>Maximize throughput represented as minimize negative throughput"]
+  MOOController["**MOO Controller**<br/>run_nsga2_optimization<br/>Attributes - pop_size n_gen n_replications base_seed n_cores<br/>Methods - setup problem run minimize return result"]
+  BufferProblem["**Buffer Capacity Problem**<br/>Class BufferCapacityProblem<br/>Attributes - n_var n_obj xl xu n_replications base_seed n_cores<br/>Methods - _evaluate batch evaluate using multiprocessing pool"]
+  NSGA2Algo["**NSGA2 Algorithm**<br/>Sampling SBX PM operators<br/>Attributes - pop_size eliminate_duplicates<br/>Methods - evolve generation loop"]
+  MultiprocessPool["**Multiprocessing Pool**<br/>processes fixed to n_cores<br/>Behavior - map evaluate tasks in parallel"]
+  EvalIndividual["**Evaluate Individual**<br/>evaluate_single_individual function<br/>Inputs - caps n_replications base_seed warmup measure_until<br/>Methods - run run_simulation_with_caps per replication aggregate objectives"]
+  SimRunner["**Simulation Runner**<br/>run_simulation_with_caps and run_simulation<br/>Inputs - seed caps<br/>Outputs - throughput wip produced_parts machine_energy<br/>Methods - build env run warmup sample WIP compute metrics"]
+  DelayBufferClass["**DelayBuffer Class**<br/>Attributes - cap delay tokens store in_transit<br/>Methods - put get free_capacity in_transit_count"]
+  MachineClass["**Machine Class**<br/>Attributes - name input_buffer output_buffer process_time availability mttr working_power waiting_power capacity resource state stats<br/>Methods - run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+  ResultNode["**Optimization Result**<br/>Pareto front history saved in result object<br/>Includes population history per generation"]
+  CSVExporter["**CSV Exporter**<br/>export_history_to_csv<br/>Writes generations individuals capacities wip throughput to CSV file in results folder"]
+
+  %% Flow connections
+  InputVars --> MOOController
+  Objectives --> MOOController
+  MOOController --> BufferProblem
+  MOOController --> NSGA2Algo
+  NSGA2Algo --> BufferProblem
+  BufferProblem --> MultiprocessPool
+  MultiprocessPool --> EvalIndividual
+  EvalIndividual --> SimRunner
+  SimRunner --> DelayBufferClass
+  SimRunner --> MachineClass
+  DelayBufferClass --> SimRunner
+  MachineClass --> SimRunner
+  SimRunner --> EvalIndividual
+  EvalIndividual --> BufferProblem
+  NSGA2Algo --> ResultNode
+  BufferProblem --> NSGA2Algo
+  MOOController --> ResultNode
+  ResultNode --> CSVExporter
+
+  %% Notes about interactions
+  BufferProblem ---|uses| MultiprocessPool
+  MultiprocessPool ---|parallel evaluates| EvalIndividual
+  EvalIndividual ---|calls per replication| SimRunner
+  SimRunner ---|instantiates| DelayBufferClass
+  SimRunner ---|instantiates| MachineClass
+  ResultNode ---|final output| CSVExporter

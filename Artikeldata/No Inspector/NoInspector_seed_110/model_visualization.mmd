@@ -1,0 +1,89 @@
+flowchart TD
+classDef buffer fill:#ffffff,stroke:#333333,stroke-width:1px,stroke-dasharray:3 3,color:#000;
+classDef machine fill:#d2e7ff,stroke:#004a99,stroke-width:1px,color:#000;
+classDef store fill:#ffe08a,stroke:#b87a00,stroke-width:1px,color:#000;
+classDef sink fill:#ffb3b3,stroke:#990000,stroke-width:1px,color:#000;
+classDef defect fill:#ff9999,stroke:#660000,stroke-width:1px,color:#000;
+classDef helper fill:#e0e0e0,stroke:#666666,stroke-width:1px,color:#000;
+
+PartGenerator["**Part generator**
+Inter-arrival=1s"]:::store
+RawInput["**Raw input**
+capacity=1000"]:::store
+LoadingRobot["**Loading robot**
+CT=12s
+Availability=90.49%"]:::machine
+PostLoadingBuffer["**Post loading buffer**
+DelayBuffer cap=2
+delay=10s"]:::buffer
+ConveyorBelt["**Conveyor belt**
+CT=6s
+Availability=100%"]:::machine
+PostConveyorBuffer["**Post conveyor buffer**
+DelayBuffer cap=2
+delay=10s"]:::buffer
+WashingMachine["**Washing machine**
+CT=14s
+Availability=80.89%"]:::machine
+PostWashingBuffer["**Post washing buffer**
+DelayBuffer cap=2
+delay=10s"]:::buffer
+HanteringCell["**Hantering cell**
+CT=25s
+Availability=97.79%"]:::machine
+PrePressSplit["**Pre-press split**
+Store capacity=3"]:::store
+Splitter["**Splitter**
+Even split to presses"]:::helper
+PrePress1Buffer["**Pre-press1 buffer**
+DelayBuffer cap=3
+delay=32s"]:::buffer
+PrePress2Buffer["**Pre-press2 buffer**
+DelayBuffer cap=3
+delay=32s"]:::buffer
+PressesCell1["**Presses cell 1**
+CT=175s
+Availability=87.79%"]:::machine
+PressesCell2["**Presses cell 2**
+CT=176s
+Availability=87.69%"]:::machine
+Press1Out["**Press1 out**
+Store capacity=3"]:::store
+Press2Out["**Press2 out**
+Store capacity=3"]:::store
+Merger["**Merger**
+Merge parallel presses"]:::helper
+PostPress12Buffer["**Post-press1&2 buffer**
+DelayBuffer cap=3
+delay=32s"]:::buffer
+QualityStation["**Quality station cell**
+CT=41s
+Availability=85.87%
+DefectRate=8.9%"]:::machine
+FinishedSink["**Finished goods sink**
+Store (final)"]:::sink
+DefectSink["**Defects sink**
+Scrap store"]:::defect
+
+PartGenerator --> RawInput
+RawInput --> LoadingRobot
+LoadingRobot --> PostLoadingBuffer
+PostLoadingBuffer --> ConveyorBelt
+ConveyorBelt --> PostConveyorBuffer
+PostConveyorBuffer --> WashingMachine
+WashingMachine --> PostWashingBuffer
+PostWashingBuffer --> HanteringCell
+HanteringCell --> PrePressSplit
+PrePressSplit --> Splitter
+Splitter --> PrePress1Buffer
+Splitter --> PrePress2Buffer
+PrePress1Buffer --> PressesCell1
+PrePress2Buffer --> PressesCell2
+PressesCell1 --> Press1Out
+PressesCell2 --> Press2Out
+Press1Out --> Merger
+Press2Out --> Merger
+Merger --> PostPress12Buffer
+PostPress12Buffer --> QualityStation
+QualityStation --> FinishedSink
+QualityStation -- defect --> DefectSink

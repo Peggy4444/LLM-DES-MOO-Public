@@ -8,7 +8,7 @@
 
 \PassOptionsToPackage{hyperfootnotes=false}{hyperref}
 \documentclass[a4paper,fleqn]{cas-sc}
-
+%\documentclass[preprint,12pt]{elsarticle}
 % If the front matter runs over more than one page, use the longmktitle option in Overleaf if supported by the installed CAS bundle.
 %\documentclass[a4paper,fleqn,longmktitle]{cas-sc}
 
@@ -27,7 +27,7 @@
 \usepackage{float}
 \usepackage{colortbl}
 \usepackage{pdftexcmds}
-
+%\usepackage[authoryear]{natbib}
 % Row highlighting for the Pareto-front table: \hl is placed in every cell and
 % is set per row to either \hlon (shaded) or \relax (plain).
 \newcommand{\hlon}{\cellcolor{gray!20}}
@@ -87,6 +87,7 @@
 }
 
 \begin{document}
+\shortcites{Bruneau2003}
 \let\WriteBookmarks\relax
 
 % ----------------------------------------------------------------------
@@ -98,7 +99,7 @@
 % ----------------------------------------------------------------------
 % Title
 % ----------------------------------------------------------------------
-\title[mode = title]{An agentic LLM framework for simulation-driven multi-objective optimization and automated bottleneck analysis in manufacturing operations}
+\title[mode = title]{An agentic LLM framework for discrete-event simulation-driven multi-objective optimization and automated bottleneck analysis in production systems}
 
 % ----------------------------------------------------------------------
 % Authors and affiliations
@@ -163,10 +164,14 @@ Manufacturing companies operate under simultaneous pressure from fluctuating dem
   human-in-the-loop checkpoints let a practitioner steer objectives, hyperparameters, and Pareto and alleviation
   preferences without writing code. The framework is validated against a commercial simulation optimizer on a real
   automotive production line, using throughput, work-in-process, and specific energy consumption over buffer-capacity
-  decisions. Generated KPIs match the reference within one percent on throughput and within a few percent on work-in-process on the unoptimized model.; the framework's Pareto front is competitive on hypervolume, and the automated bottleneck ranking
+  decisions. Generated KPIs match the reference within one percent on throughput and within a few percent on work-in-process on the unoptimized model. The framework's Pareto front is competitive on hypervolume, and the automated bottleneck ranking
   agrees with the commercial reference on the top alleviation actions. A performance-retention analysis under sustained parameter perturbations further shows that nominally Pareto-optimal solutions differ in their ability to retain throughput under sustained degradation: the lowest-WIP solution exhibits the lowest worst-case performance retention, while the knee-point retains similar throughput to the highest-TH solution under the considered perturbations. Scenario-conditioned bottleneck analysis further distinguishes bottlenecks that remain dominant across degraded operating conditions from those whose importance is scenario-dependent. Ablation studies isolate the contribution of each framework component, and a cross-tier comparison shows that competitive results are attainable with smaller and cheaper language models. A full
-  study completes at a mean API cost on the order of a fraction of a US dollar and about fifteen to seventeen minutes of wall-clock time, suggesting that agentic LLM workflows can substantially lower both the cost and the expertise barrier for simulation-based multi-objective optimization in industrial decision support. Source code and an interactive demonstration are available at \url{https://github.com/Peggy4444/LLM-DES-MOO-Public} and
-  \url{https://llm-des-moo.streamlit.app/}.
+  study completes at a mean API cost on the order of a fraction of a US dollar and about fifteen to seventeen minutes of wall-clock time, suggesting that agentic LLM workflows can substantially lower both the cost and the expertise barrier for simulation-based multi-objective optimization in industrial decision support. %Source code and an interactive demonstration are available at \url{https://github.com/Peggy4444/LLM-DES-MOO-Public} and \url{https://llm-des-moo.streamlit.app/}.
+
+
+ 
+\textbf{Discrete-event simulation (DES) coupled with multi-objective optimization supports trade-off and bottleneck analysis in manufacturing, but building the model, wrapping it in an evolutionary algorithm, and turning the resulting Pareto front into improvement actions remain expert-intensive tasks. Recent large language model (LLM) frameworks automate DES generation, yet no end-to-end framework couples LLM-generated simulation, LLM-generated optimization, and automated bottleneck analysis on a real industrial system. This paper proposes an agentic LLM framework in which specialized agents, each constrained by a small executable blueprint, generate a SimPy DES from a production event log, a tailored NSGA-II algorithm around that DES, and an automated formulation of the Simulation-based Constraint Removal (SCORE) bottleneck method. An inspector agent repairs failing code, and human-in-the-loop checkpoints let practitioners steer objectives and preferences without programming. Validated against the commercial optimizer FACTS Analyzer on a real automotive line, the generated model reproduces throughput within 1\% and work-in-process within 9\% across the initial and three optimized configurations. Its Pareto front attains a hypervolume comparable to the reference, and the automated bottleneck ranking agrees with it on the top four alleviation actions. Under sustained parameter perturbations, Pareto-optimal configurations differ in how much throughput they retain, with the lowest work-in-process solution retaining the least. Ablations show that the blueprints are essential for reliable generation and that a smaller model achieves comparable results at under half the cost. A full study costs about USD~0.32 and 17 minutes, suggesting that agentic LLM workflows can lower the cost and expertise barrier of simulation-based optimization.}
+
 \end{abstract}
 
 % Highlights removed from front matter to avoid a separate pre-title page in CAS.
@@ -176,7 +181,7 @@ Manufacturing companies operate under simultaneous pressure from fluctuating dem
 % ----------------------------------------------------------------------
 
 
-\begin{keywords}                                      Agentic large language models \sep                    Discrete-event simulation \sep                        Multi-objective optimization \sep                     Automated bottleneck analysis \sep manufacturing operations \sep               Human-in-the-loop decision support                    \end{keywords}
+\begin{keywords}                                      Agentic large language models \sep                    Discrete-event simulation \sep                        Multi-objective optimization \sep                     Automated bottleneck analysis \sep Manufacturing operations \sep               Human-in-the-loop decision support                    \end{keywords}
 
 {%
 \hfuzz=120pt
@@ -429,19 +434,19 @@ Industry~5.0 reframes the automation-centric Industry~4.0 agenda around human-ce
   \textbf{Study} & \textbf{Domain} & \textbf{LLM~$\rightarrow$ Sim} & \textbf{LLM~$\rightarrow$ MOEA} &                 
   \textbf{Automated bottleneck} & \textbf{Industrial validation} \\                                                     
   \midrule                                                                                                           
-  Schmitt et al.~\citep{Schmitt2026jms} & Manufacturing & Yes (DES gen. \& adapt.) & No & No (utilization-based) & Yes  
+  \citet{Schmitt2026jms} & Manufacturing & Yes (DES gen. \& adapt.) & No & No (utilization-based) & Yes  
   (FACTS ref.) \\ \addlinespace                                                                                         
-  Jackson et al.~\citep{Jackson2024} & Logistics & Yes (SimPy from text) & No & No & No \\ \addlinespace             
-  Elbasheer et al.~\citep{Elbasheer2025} & Manufacturing & Yes (LLM-based ASMG) & No & No & Partial \\ \addlinespace    
-  Assad et al.~\citep{Assad2024} & Manufacturing (DT) & No (textual explanations) & No & No & Qualitative \\            
+  \citet{Jackson2024} & Logistics & Yes (SimPy from text) & No & No & No \\ \addlinespace             
+  \citet{Elbasheer2025} & Manufacturing & Yes (LLM-based ASMG) & No & No & Partial \\ \addlinespace    
+  \citet{Assad2024} & Manufacturing (DT) & No (textual explanations) & No & No & Qualitative \\            
   \addlinespace                                                                                                         
-  SimGPT et al.~\citep{SimGPT2026cie} & Manufacturing & Partial (Simio integration) & No & No & Case study \\           
+  \citet{SimGPT2026cie} & Manufacturing & Partial (Simio integration) & No & No & Case study \\           
   \addlinespace                                                                                                         
-  Wan et al.~\citep{Wan2026struct} & Code generation & No (structure-guided) & No & No & Benchmarks \\ \addlinespace 
-  Yang et al.~\citep{Yang2024opro} & LLM-as-optimizer & No & Partial (single-obj.) & No & Benchmarks \\ \addlinespace   
-  Liu et al.~\citep{Liu2024llm4moea} & LLM-assisted MOEA & No & Yes (LLM search op.) & No & Benchmarks \\ \addlinespace 
-  Yao et al.~\citep{Yao2025meoh} & Heuristic design & No & Yes (Pareto of heur.) & No & Benchmarks \\ \addlinespace     
-  Huang et al.~\citep{Huang2025tevc} & LLM-generated MOEA & No & Yes (LLM $\rightarrow$ MOEA code) & No & Benchmarks \\ 
+  \citet{Wan2026struct} & Code generation & No (structure-guided) & No & No & Benchmarks \\ \addlinespace 
+  \citet{Yang2024opro} & LLM-as-optimizer & No & Partial (single-obj.) & No & Benchmarks \\ \addlinespace   
+  \citet{Liu2024llm4moea} & LLM-assisted MOEA & No & Yes (LLM search op.) & No & Benchmarks \\ \addlinespace 
+  \citet{Yao2025meoh} & Heuristic design & No & Yes (Pareto of heur.) & No & Benchmarks \\ \addlinespace     
+  \citet{Huang2025tevc} & LLM-generated MOEA & No & Yes (LLM $\rightarrow$ MOEA code) & No & Benchmarks \\ 
   \addlinespace                                                                                                         
   \textbf{This study} & \textbf{Manufacturing} & \textbf{Yes} & \textbf{Yes (NSGA-II)} & \textbf{Yes (auto SCORE)} &    
   \textbf{Yes (FACTS ref.)} \\                                                                                          
@@ -616,14 +621,9 @@ Industry~5.0 reframes the automation-centric Industry~4.0 agenda around human-ce
   pathological loops. In the reported experiments (Section~\ref{sec:results-ablation}) the inspector successfully
   repairs the majority of transient generation failures without any user intervention.
 
-  \paragraph{HITL checkpoints.} The framework exposes six HITL checkpoints across the pipeline: (H1)~confirmation of the
-   parsed line topology and machine parameters after stage S1, (H2)~confirmation of the visualized DES structure after
-  stage S2, (H3)~selection of MOO objectives and decision variables at the start of stage S3, (H4)~confirmation of MOEA 
-  hyperparameters within stage S3, (H5)~selection of Pareto points to evaluate further at the end of stage S3, and
-  (H6)~confirmation or overriding of SCORE improvement ranges within stage S4. All six checkpoints are presented as
-  structured terminal prompts with defaults; when defaults are accepted throughout, the framework runs unattended. The
-  ablation in Section~\ref{sec:results-ablation} isolates the contribution of these checkpoints to the workflow.
-                                                                                            
+  \paragraph{HITL checkpoints.} The framework exposes six HITL checkpoints across the pipeline: (H1)~confirmation of the parsed line topology and machine parameters after stage S1, (H2)~confirmation of the visualized DES structure after stage S2, (H3)~selection of MOO objectives and decision variables at the start of stage S3, (H4)~confirmation of MOEA  hyperparameters within stage S3, (H5)~selection of Pareto points to evaluate further at the end of stage S3, and (H6)~confirmation or overriding of SCORE improvement ranges within stage S4. All six checkpoints are presented as structured terminal prompts with defaults; when defaults are accepted throughout, the framework runs unattended. %The ablation in Section~\ref{sec:results-ablation} isolates the contribution of these checkpoints to the workflow.
+
+                                                            
                                                                                                                         
   % ======================================================================
   % 4. Case study and evaluation methodology                                                                            
@@ -748,7 +748,7 @@ The decision variables are the capacities of the six intermediate buffers, each 
   HV. Bottleneck-ranking quality is reported as the agreement between the framework's SCORE ranking and the FACTS SCORE
   ranking on the top-$k$ alleviation actions, with $k \in \{3, 4, 5\}$.
 
-  \emph{Performance retention under sustained perturbation} is the fraction of nominal TH retained when the DES is stress-tested under three sustained parameter-perturbation scenarios ($D_1$, $D_2$, $D_3$; see Section~\ref{sec:resilience}). For a Pareto configuration $x$ and scenario $d$, retention is $R_d(x) = TH_d(x) / TH_\mathrm{nom}(x)$, and the worst-case performance-retention score is $R_\mathrm{worst}(x) = \min_d R_d(x)$, following the retention-of-performance perspective reviewed by \citet{Hosseini2016}. This metric captures one operational dimension of resilience, namely the ability to maintain production performance under degraded operating conditions; it does not capture post-disruption recovery dynamics, recovery time, or adaptation trajectories.          
+  \emph{Performance retention under sustained perturbation} is the fraction of nominal TH retained when the DES is stress-tested under three sustained parameter-perturbation scenarios ($D_1$, $D_2$, $D_3$; see Section~\ref{sec:resilience}). For a Pareto configuration $x$ and perturbation scenario $d$, retention is $R_d(x) = TH_d(x) / TH_\mathrm{nom}(x)$, and the worst-case performance-retention score is $R_\mathrm{worst}(x) = \min_d R_d(x)$, following the retention-of-performance perspective reviewed by \citet{Hosseini2016}. This metric captures one operational dimension of resilience, namely the ability to maintain production performance under degraded operating conditions; it does not capture post-disruption recovery dynamics, recovery time, or adaptation trajectories.          
 
   \emph{Operational cost} is reported as the number of OpenAI API calls, the number of input and output tokens, the     
   resulting USD cost per completed study, and the end-to-end wall-clock time. Reporting all four allows the reader to
@@ -768,7 +768,9 @@ The decision variables are the capacities of the six intermediate buffers, each 
 
   \subsection{Fidelity}\label{sec:results-fidelity}   
 
-For the baseline configuration, the framework's DES of Case~A reproduces the KPIs of the FACTS Analyzer reference on the initial (unoptimized) model and on three adapted variants corresponding to the three Pareto points selected in Section~\ref{sec:results-moo} (Table~\ref{tab:facts_python_comparison}). TH agreement is within 1~\% across all four versions. WIP agreement is within 3~\% on the unoptimized model and on the lowest-WIP configuration (V1), and grows to approximately 9~\% at the knee-point (V2) and highest-TH (V3) configurations, a discrepancy analyzed in Section~\ref{sec:discussion-validity}. SEC is systematically higher in the framework-generated model by approximately 3~\% across all four versions, an accounting difference in how transition intervals are classified between the SimPy blueprint and FACTS Analyzer. The SEC discrepancy would affect any SEC-oriented MOO scenario (a full evaluation of which is deferred to future work) but does not   
+For the baseline configuration, the framework's DES of Case~A reproduces the KPIs of the FACTS Analyzer reference on the initial (unoptimized) model and on three adapted variants corresponding to the three Pareto points selected in Section~\ref{sec:results-moo} (Table~\ref{tab:facts_python_comparison}). TH agreement is within 1~\% across all four versions. WIP agreement is within 3~\% on the unoptimized model and on the lowest-WIP configuration (V1), and grows to approximately 9~\% at the knee-point (V2) and highest-TH (V3) configurations. This configuration-dependent WIP discrepancy is documented here and discussed further in Section~\ref{sec:discussion-validity}; its mechanistic origin has not been fully characterized in the current work.
+%, a discrepancy analyzed in Section~\ref{sec:discussion-validity}. 
+SEC is systematically higher in the framework-generated model by approximately 3~\% across all four versions, an accounting difference in how transition intervals are classified between the SimPy blueprint and FACTS Analyzer. The SEC discrepancy would affect any SEC-oriented MOO scenario (a full evaluation of which is deferred to future work) but does not   
   affect the TH/WIP scenario (S1) or the bottleneck ranking.
 
 The values in Table~\ref{tab:facts_python_comparison} are means over ten random seeds $\{11, 22, 33, 44, 55, 66, 77, 88, 99, 110\}$ using the
@@ -920,7 +922,7 @@ For Scenario~S1 (TH/WIP), the framework returns a Pareto front with 19
   ten seeds, a $+0.66$~\% mean improvement. A Wilcoxon rank-sum test on the                                         
   per-seed HV values gives $p = 0.05$: the null hypothesis of equal HV                                              
   distributions is not rejected at the conventional level, so the                                                   
-  framework's front is statistically indistinguishable from the FACTS                                               
+  framework's front is comparable the FACTS                                               
   reference on Scenario~S1.                                                                                         
                                                                                                                     
   \begin{table}[ ]                                                                                               
@@ -1159,7 +1161,7 @@ For Scenario~S1 (TH/WIP), the framework returns a Pareto front with 19
   To isolate the contribution of each component of the framework, eight                                                                     
   ablation configurations were evaluated on Case~A, in addition to the
   FACTS reference. Each configuration was run for ten independent seeds.                                                                    
-  The three axes examined are: the two blueprints (simulation, MOO), the                                                                    
+  The four axes examined are: the two blueprints (simulation, MOO), the                                                                    
   inspector agent, the LLM tier (GPT-5-mini, GPT-5-nano), and the sampling                                                                  
   temperature ($T \in \{0.0, 0.7, 1.0\}$).                                                                                                  
   Tables~\ref{tab:ablation_kpi_comparison_extended}--\ref{tab:ablation_errors}                                                              
@@ -1679,20 +1681,56 @@ Figure~\ref{fig:r1-pareto} recolors the nominal S1 Pareto front by
   generation and adaptation stages, and GPT-5-mini for the visualization and evaluation stages, matching the tier
   assignment reported in Table~\ref{tab:agents}.
 
-  \subsection{Industrial reflections}\label{sec:discussion-industry}                                                    
+  \subsection{Exploratory industrial evaluation}\label{sec:discussion-industry}\label{sec:discussion-industry}                                                    
   
-  To contextualize the framework's potential deployment, informal reflections were gathered from three practitioners at 
-  the host company: a simulation specialist, a process-improvement engineer, and a production manager. Their comments
-  converged on three themes. First, the natural-language explanations produced by the bottleneck agent were singled out 
-  as the most immediately useful artifact, because they translate the underlying analysis into a language a
-  production-floor audience can act on. Second, trust in the optimization recommendations was conditional on being able
-  to inspect the generated DES side by side with the FACTS Analyzer reference model, supporting the design decision to
-  always produce an executable simulation as an intermediate artifact rather than treating the LLM as a black-box
-  optimizer. Third, adoption barriers were dominated by data-governance considerations rather than by the technical
-  quality of the framework: sending production logs to an external LLM provider requires careful review under existing
-  IT-security policies, and on-premises or European-hosted model deployments are a prerequisite for any production-line
-  trial. These reflections are informal and should not be read as a structured usability study; a dedicated
-  investigation of usability and adoption is proposed as future work in Section~\ref{sec:conclusion}.
+  To complement the quantitative evaluation, we conducted an exploratory                                                 
+  evaluation with four users who interacted with the framework and
+  reflected on its relevance for simulation-driven decision support. Two                                                 
+  were graduate students with up to two years of experience in DES and                                                   
+  optimization, while two were industrial practitioners from two large                                                   
+  Swedish automotive OEMs, each with more than five years of experience                                                  
+  in DES, optimization, and Pareto-based decision making. This was not                                                   
+  designed as a systematic usability study; rather, its purpose was to                                                   
+  obtain formative feedback from users with different levels of expertise                                                
+  after they had inspected the generated model and interpreted the                                                       
+  optimization and bottleneck-analysis outputs, including side-by-side                                                   
+  comparisons between raw simulation results and the LLM-generated                                                       
+  natural-language interpretations.                                                                                      
+                                                                                                                         
+  Three themes emerged consistently across the cohort. First, participants                                               
+  saw value in the LLM agents for reducing the effort required to
+  interpret DES and multi-objective optimization results while retaining                                                 
+  human involvement in the final decision -- directly supporting the                                                     
+  framework's stated aim of lowering the expertise barrier without                                                       
+  displacing the practitioner. Second, the experienced practitioners                                                     
+  particularly valued the simple workflow and the manual human-in-the-loop                                               
+  checkpoints, which allowed intermediate outputs to be inspected for                                                    
+  abnormalities before subsequent stages were triggered; one practitioner                                                
+  stated that they would recommend such a framework to colleagues. This                                                  
+  reinforces the design decisions on inspectability and staged HITL                                                      
+  control introduced in Section~\ref{sec:framework-overview}. Third, and                                                 
+  in parallel with these benefits, participants identified two concrete                                                  
+  adoption requirements. On the interaction side, they requested clearer                                                 
+  visualization of the production flow, an interactive UI for editing                                                    
+  machine and buffer parameters without touching generated code, and                                                     
+  stronger mechanisms for verifying generated models and recommendations                                                 
+  before operational use. On the deployment side, trust in the framework                                                 
+  was tied to data governance: using external LLM services for production                                                
+  event logs was raised as a barrier that would require review under                                                     
+  existing IT-security policies, with on-premises or region-hosted model                                                 
+  deployments identified as a natural prerequisite for any production-line                                               
+  trial.
+
+  These observations should be read as formative rather than as evidence                                                 
+  of systematic usability validation; four participants cannot support
+  generalizable claims. They do, however, provide independent qualitative                                                
+  support for the framework's human-in-the-loop and inspectability design                                                
+  decisions, and they surface a concrete engineering agenda -- interactive                                               
+  model editing, verification mechanisms, and data-governance-compliant                                                  
+  deployment -- that any subsequent industrial trial will need to address.                                               
+  A structured usability study across a larger and more diverse user                                                     
+  population is proposed as future work in                                                                               
+  Section~\ref{sec:conclusion}. 
 
   \subsection{Alignment with Industry~5.0}\label{sec:discussion-i5}                                                     
   
@@ -1747,8 +1785,10 @@ The source code, the three blueprints, an anonymized version of the Case~A event
    frozen release of the repository will be archived on Zenodo and the corresponding DOI added to this section.     .                          
                                                                                                                         
   \section*{Acknowledgments}                                                                                            
-  The authors thank Mats Gustafsson for valuable feedback during the project, and colleagues at Uppsala University and
-  the host company for the discussions that informed this work.                                                         
+  The authors thank Mats Gustafsson and Matias Urenda Moris for valuable feedback during the project, and colleagues at Uppsala University and
+  the host company for the discussions that informed this work.       
+  This study was partially funded by Sweden’s Innovation Agency (Vinnova) through the AI-COMPETE project (grant number 2025-01066).
+  The computations were enabled by resources in project [NAISS 2026/4-892] provided by the National Academic Infrastructure for Supercomputing in Sweden (NAISS) at UPPMAX, funded by the Swedish Research Council through grant agreement no. 2022-06725.
                                                             
   % Print CRediT contribution statement (generated from \credit{...} above).                                            
   \printcredits                                             

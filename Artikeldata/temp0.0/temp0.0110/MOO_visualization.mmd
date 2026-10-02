@@ -1,0 +1,61 @@
+flowchart TD
+Manager["**Production Manager**<br/>Objectives minimize wip maximize throughput<br/>Input variables buffer capacities {1-10}"]
+MOOController["**MOO Controller**<br/>run_nsga2_optimization<br/>pop_size n_gen n_replications base_seed"]
+ProblemClass["**BufferCapacityProblem**<br/>n_var 6 n_obj 2 n_replications base_seed n_cores<br/>xl xu elementwise_evaluation"]
+NSGA2Algo["**NSGA2 Algorithm**<br/>sampling crossover mutation<br/>pop evolve eliminate_duplicates"]
+MultiprocessPool["**Multiprocessing Pool**<br/>processes n_cores<br/>parallel evaluation of individuals"]
+Evaluator["**Evaluator**<br/>evaluate_single_individual<br/>aggregates replications returns tuple wip negative_throughput"]
+SimWithCaps["**Simulation Runner With Caps**<br/>run_simulation_with_caps<br/>accepts caps list uses DelayBuffer and Machine"]
+SimCore["**Simulation Core**<br/>run_simulation<br/>creates env part generator sampling wip throughput"]
+DelayBufferClass["**DelayBuffer**<br/>cap delay store tokens in_transit<br/>methods put get free_capacity in_transit_count"]
+MachineClass["**Machine**<br/>name input_buffer output_buffer process_time availability mttr capacity<br/>attributes working_time failed_time blocked_time processed_count active_count is_up<br/>methods run _breakdown_cycle waiting_energy_consumption working_energy_consumption"]
+InputVars["**Buffer Capacities**<br/>cap_post_loading cap_post_conveyor cap_post_washing cap_pre_press1 cap_pre_press2 cap_post_press12<br/>discrete domain {1-10}"]
+HistoryExporter["**History Exporter**<br/>export_history_to_csv<br/>writes generation individual caps wip throughput to csv"]
+ResultNode["**Optimization Result**<br/>Pareto front history saved in result object"]
+
+Manager --> MOOController
+MOOController --> ProblemClass
+MOOController --> NSGA2Algo
+NSGA2Algo --> ProblemClass
+ProblemClass --> MultiprocessPool
+MultiprocessPool --> Evaluator
+Evaluator --> SimWithCaps
+SimWithCaps --> SimCore
+SimWithCaps --> DelayBufferClass
+SimWithCaps --> MachineClass
+SimCore --> DelayBufferClass
+SimCore --> MachineClass
+InputVars --> ProblemClass
+NSGA2Algo --> ResultNode
+MOOController --> HistoryExporter
+ResultNode --> HistoryExporter
+HistoryExporter --> Manager
+
+%% interaction details
+ProblemClass -. evaluates population via .-> MultiprocessPool
+Evaluator -. runs replications via .-> SimWithCaps
+SimWithCaps -. builds model via .-> SimCore
+MachineClass -. records metrics via .-> SimCore
+DelayBufferClass -. enforces capacities and delays via .-> SimCore
+
+%% visual grouping
+subgraph Simulation Components
+  SimCore
+  DelayBufferClass
+  MachineClass
+end
+
+subgraph Optimization Components
+  MOOController
+  ProblemClass
+  NSGA2Algo
+  MultiprocessPool
+  Evaluator
+  HistoryExporter
+  ResultNode
+end
+
+subgraph Inputs
+  InputVars
+  Manager
+end
